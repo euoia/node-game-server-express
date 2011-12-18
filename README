@@ -1,0 +1,11 @@
+node-game-server-express
+
+DIARY
+=====
+
+Sunday 18 December 2011
+-----------------------
+After tinkering all day and finally getting some basic things working with
+mongoDB I am now at the point where I need to display dynamically generated
+HTML. For this I will require an HTML templating library and at this point I
+have decided to make the full jump to express.
