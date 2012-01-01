@@ -1,0 +1,58 @@
+body {
+  color: #ddddff;
+  background: #111111;
+  padding: 20px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.account-details {
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  color: #333333;
+}
+
+.chat-window {
+  width: 1000px;
+  height: 500px;
+}
+
+.chat-window > .message-box {
+  padding: 5px;
+  background: #222;
+  width: 100%;
+  height: 90%;
+}
+
+
+
+.chat-window > .header {
+  color: white;
+  font: 18px "Lucida Grande";
+}
+
+.room-name {
+  font-family: "Courier New";
+}
+
+.chat-window ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  padding-left: 10px;
+}
+
+.chat-window .username {
+  font-weight: bold;
+  color: orange;
+}
+
+.chat-window input {
+  width: 1005px; /* TODO fix this hacky number */
+  border: 3px solid #aaaaaa;
+  background-color: #ddddff;
+  padding: 0; margin: 0;
+}
+

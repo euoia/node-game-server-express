@@ -9,3 +9,15 @@ After tinkering all day and finally getting some basic things working with
 mongoDB I am now at the point where I need to display dynamically generated
 HTML. For this I will require an HTML templating library and at this point I
 have decided to make the full jump to express.
+
+Very little has been done on this version so far - the main work was done on
+node-game-server.
+
+Thursday 29 December 2011
+-------------------------
+I am reverting to the previous codebase and using:
+* Mongoose (mu)
+* Mustache
+
+Because I think it will be simpler. I will revert to express at a later point
+if I think it is required.

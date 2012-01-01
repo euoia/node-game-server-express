@@ -1,0 +1,22 @@
+script
+  chat = new Chat();
+
+p.account-details Logged in as #{username} (#{real_name})
+
+div.chat-window(id='chat-#{room_name}')
+  div.header room 
+    span.room-name #{room_name}
+  div.user-list
+  div.message-box
+    ul
+      each message in messages
+        li.message
+          span.username #{message.from}: 
+          span.message #{message.message}
+  div.input
+    form(id='form-#{room_name}')
+      input(name='message')
+      submit
+
+script
+  chat.attach('#{room_name}');
