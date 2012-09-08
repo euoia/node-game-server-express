@@ -2,6 +2,8 @@ var mongoose = require('mongoose'),
     Schema   = mongoose.Schema,
     step     = require('step');
 
+var waiting = [];
+
 exports.index = function(req, res){
     // This is the boring old default index
   res.render('index', { title: 'Express' });
@@ -115,6 +117,21 @@ exports.chat_send = function (req, res) {
             thisEvents = events;
             this();
         },
+        function sendToWaitingClients() {
+            /* Any clients that are waiting on the long poll should receive the message. */
+            var waiting_user;
+
+            console.log('There are ' + waiting.length + ' clients waiting.');
+
+            while (waiting.length > 0) {
+                waiting_user = waiting.pop();
+
+                console.log ('Sending to waiting user ' + waiting_user['username']);
+                waiting_user['callback']();
+            }
+
+            this();
+        },
         function sendResponse() {
             return res.send({
                 status: 1,
@@ -125,6 +142,8 @@ exports.chat_send = function (req, res) {
 };
 
 // Client uses long polling to wait for new events
+//
+// To facilitate long-polling this should only return when there is a new message.
 exports.chat_get_unread_events = function (req, res) {
     var ChatRoom = mongoose.model('ChatRoom'),
         thisEvents = [];
@@ -139,11 +158,23 @@ exports.chat_get_unread_events = function (req, res) {
                 throw (err);
             }
 
-            console.log('Unread events:');
+            console.log('Unread events: - ');
             console.log(events);
 
-            thisEvents = events;
-            this();
+            if (events.length == 0) {
+                console.log ('No unread events - pushing this connection onto the waiting queue.');
+
+                var waiting_user = {
+                    'username' : req.session.username,
+                    'callback' : this
+                };
+
+                waiting.push(waiting_user);
+            } else {
+                console.log ('Sending unread event.');
+                thisEvents = events;
+                this();
+            }
         },
         function sendResponse() {
             return res.send({

@@ -98,13 +98,14 @@ Chat.prototype.send = function() {
 }
 
 Chat.prototype.longPoll = function () {
+    console.log ('longPoll...');
     var chat_obj = this;
 
     //TODO update the document title to include unread message count if blurred
     $.ajax({
         cache: false,
         type: "POST",
-        url: "/chat/pollEvents",
+        url: "/chat/getUnreadEvents",
         data: {room_name: chat_obj.room_name },
         dataType: "json",
         error: function () {
@@ -113,11 +114,8 @@ Chat.prototype.longPoll = function () {
             setTimeout(chat_obj.longPoll, 10*1000);
         },
         success: function (data) {
-            //longPoll(data);
-            setTimeout(function() {
-                chat_obj.longPoll()
-            }, 1000);
-
+            // Upon success we want to long poll again immediately.
+            chat_obj.longPoll();
             chat_obj.processEvents (data.events);
         }
     });
