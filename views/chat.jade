@@ -1,6 +1,3 @@
-script
-  chat = new Chat();
-
 p.account-details Logged in as #{username} (#{real_name})
 
 div.chat-window(id='chat-#{room_name}')
@@ -9,14 +6,21 @@ div.chat-window(id='chat-#{room_name}')
   div.user-list
   div.message-box
     ul
-      each message in messages
-        li.message
-          span.username #{message.from}: 
-          span.message #{message.message}
+      // Possible move the following into javascript calls
+      each event in events
+        if event.type === 'message'
+          li.message
+            span.username #{event.username}: 
+            span.event #{event.message}
+        else if event.type == 'join'
+          li.join
+            span.username #{event.username} joined
+        fi
   div.input
     form(id='form-#{room_name}')
-      input(name='message')
+      input.entry(name='message')
       submit
 
 script
+  chat = new Chat();
   chat.attach('#{room_name}');

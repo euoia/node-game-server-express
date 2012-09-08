@@ -23,7 +23,7 @@ exports.login = function (req, res) {
 
     var this_account = null;
     var room_users = [];
-    var room_messages = [];
+    var room_events = [];
 
     step (
         function findAccount() {
@@ -44,14 +44,12 @@ exports.login = function (req, res) {
 
             this_account = account;
 
-            ChatRoom.getMessages(room_name, this);
+            ChatRoom.getEvents(room_name, this);
         },
-        function getMessagesDone(err, messages) {
+        function getEventsDone(err, events) {
             if (err) { throw (err); }
 
-            room_messages = messages;
-            console.log('getMessages returned:');
-            console.log(room_messages);
+            room_events = events;
             ChatRoom.join(room_name, this_account.username, this);
         },
         function joinRoomDone(err) {
@@ -72,7 +70,7 @@ exports.login = function (req, res) {
                 real_name: this_account.real_name,
 
                 // Chat
-                messages: room_messages,
+                events: room_events,
                 room_name: room_name,
                 users: users
             });
@@ -80,45 +78,93 @@ exports.login = function (req, res) {
     )
 };
 
-// This is an ajax request, so the respond should be a JSON object.
+// This is an ajax request that is expecting a JSON response.
 exports.chat_send = function (req, res) {
-    console.log('Request handler "chat_send" was called.');
-    console.log('Request body: ');
-    console.log(req.body);
-    console.log('From: ' + req.session.username);
+    console.log('Message from ' + req.session.username);
 
     if (req.session.username === undefined) {
         console.log('chat_send called without a valid session!');
-        res.send({error: "Invalid session."}, 400);
+        res.send({error: "Invalid session."}, 200);
         return;
     }
 
-    var ChatRoom = mongoose.model('ChatRoom');
+    var ChatRoom = mongoose.model('ChatRoom'),
+        thisEvents = [],
+        thisUsers = [];
 
     step (
-            function sendMessage() {
-                ChatRoom.sendMessage(req.body.room_name, req.session.username, req.body.message, this);
-            },
-            function sendMessageDone(err) {
-                if (err) { throw (err); }
+        function sendMessage() {
+            ChatRoom.sendMessage(req.body.room_name, req.session.username, req.body.message, this);
+        },
+        function sendMessageDone(err) {
+            if (err) { throw (err); }
 
-                this();
-            },
-            function getUnreadMessages() {
-                ChatRoom.getUnreadMessages(req.body.room_name, req.session.username, this);
-            },
-            function getUnreadMessagesDone(err, messages) {
-                if (err) { throw (err); }
+            console.log('message sent, I suppose');
+            this();
+        },
+        function getUnreadEvents() {
+            console.log('getting unread events');
+            ChatRoom.getUnreadEvents(req.body.room_name, req.session.username, this);
+        },
+        function getUnreadEventsDone(err, events) {
+            if (err) { throw (err); }
 
-                console.log('getUnreadMessages returned:');
-                console.log(messages);
-                this(messages);
-            },
-            function sendResponse(messages) {
-                return res.send({
-                    status: 1,
-                    messages: messages 
-                }, 200);
-            }
+            console.log('Unread events:');
+            console.log(events);
+
+            thisEvents = events;
+            this();
+        },
+        function sendResponse() {
+            return res.send({
+                status: 1,
+                events: thisEvents
+            }, 200);
+        }
     );
-}
+};
+
+// Client uses long polling to wait for new events
+exports.chat_get_unread_events = function (req, res) {
+    var ChatRoom = mongoose.model('ChatRoom'),
+        thisEvents = [];
+
+    step (
+        function getUnreadEvents() {
+            console.log('getting unread events');
+            ChatRoom.getUnreadEvents(req.body.room_name, req.session.username, this);
+        },
+        function getUnreadEventsDone(err, events) {
+            if (err) {
+                throw (err);
+            }
+
+            console.log('Unread events:');
+            console.log(events);
+
+            thisEvents = events;
+            this();
+        },
+        function sendResponse() {
+            return res.send({
+                status: 1,
+                events: thisEvents
+            }, 200);
+        }
+    );
+};
+
+// Client uses long polling to wait for new events
+exports.chat_poll_events = function (req, res) {
+    console.log('chat_poll_events from ' + req.session.username);
+    /*
+    var ChatRoomEvent = mongoose.model('ChatRoomEvent'); // TODO abstract this out
+
+    ChatRoomEvent.pre('save', function () {
+        return res.send({
+            status: 1,
+            events: this
+        }, 200);
+    });
+   */
+};

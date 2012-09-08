@@ -10,7 +10,7 @@ exports.init = function (args) {
     var ChatRoomUserSchema = new Schema ({
         room_name: {type: String}, 
         username: {type: String},
-        lastMessage: {type: Date, default: Date.now}
+        lastUpdated: {type: Date, default: Date.now}
     });
 
     // ChatRoomUser: Init
@@ -21,21 +21,22 @@ exports.init = function (args) {
     }
 
 
-    // Messages: Schema
-    var ChatRoomMessageSchema = new Schema ({
-        room_name: String, // TODO: Could this be embedded in the ChatRoom schema?
-        from: String, // TODO make this a reference to an account
+    // Events: Schema
+    var ChatRoomEventSchema = new Schema ({
+        room_name: String,
+        type: String,
+        username: String,
         message: String,
         created: {type: Date, default: Date.now}
     });
 
-    ChatRoomMessageSchema.virtual('asString').get(function() {
-        return this.from + ': ' + this.message;
+    ChatRoomEventSchema.virtual('asString').get(function() {
+        return this.username + ': ' + this.message;
     });
 
 
-    // Messages: Init
-    var Message = mongoose.model('ChatRoomMessage', ChatRoomMessageSchema);
+    // Events: Init
+    var Message = mongoose.model('ChatRoomEvent', ChatRoomEventSchema);
 
     if (args.rebuild === true) {
         Message.collection.drop();
@@ -49,10 +50,11 @@ exports.init = function (args) {
     // TODO : Username shoud be unique for each chat room - I think I need
     // to brush up on my understanding of mongodb.
     // TODO: Something like this should work - how does one do this in mongoose?
-    //ChatRoomSchema.ensureIndex({'messages.username': 1}, {unique: true});
+    //ChatRoomSchema.ensureIndex({'events.username': 1}, {unique: true});
     ChatRoomSchema.statics.join = function(room_name, username, cb) {
         console.log(username + ' joining ' + room_name);
 
+        var ChatRoomEvent = mongoose.model('ChatRoomEvent');
         var ChatRoomUser = mongoose.model('ChatRoomUser');
         var ChatRoom = mongoose.model('ChatRoom');
 
@@ -82,9 +84,20 @@ exports.init = function (args) {
                         room_name: room_name,
                         username: username
                     });
+
+                    chatRoomJoinEvent = new ChatRoomEvent({
+                        room_name: room_name,
+                        type: 'join',
+                        username: username
+                    }).save(function (err) {
+                        if (err) {
+                            console.log ('Error inserting Event event!');
+                        }
+                    })
+
                 } else {
                     // Update chatRoomUser
-                    chatRoomUser.lastMessage = new Date();
+                    chatRoomUser.lastUpdated = new Date();
                     console.log('User ' + username + ' was already in chat room \'' + room_name + '\'!');
                 }
 
@@ -110,27 +123,30 @@ exports.init = function (args) {
         });
     }; 
 
-    ChatRoomSchema.methods.getMessages = function(cb) { // Example
-        console.log('getMessages ' + this.name);
-        return mongoose.model('ChatRoomMessage').find({name: this.name}, cb);
+    ChatRoomSchema.methods.getEvents = function(cb) {
+        console.log('getEvents ' + this.name);
+        return mongoose.model('ChatRoom').getEvents(this.name, cb);
     }; 
 
-    ChatRoomSchema.statics.getMessages = function(room_name, cb) { // Example
-        console.log('getMessages');
+    ChatRoomSchema.statics.getEvents = function(room_name, cb) {
+        console.log('getEvents');
         console.log('> room_name=' + room_name);
 
-        return mongoose.model('ChatRoomMessage').find({room_name: room_name}, cb);
+        return mongoose.model('ChatRoomEvent').find(
+            {room_name: room_name},
+            cb
+        );
     }; 
 
     // User-oriented functions
-    ChatRoomSchema.statics.getUnreadMessages = function(room_name, username, cb) { // Example
-        console.log('getUnreadMessages');
+    ChatRoomSchema.statics.getUnreadEvents = function(room_name, username, cb) { // Example
+        console.log('getUnreadEvents');
         console.log('> room_name=' + room_name);
         console.log('> username=' + username);
 
         var ChatRoom = mongoose.model('ChatRoom');
         var ChatRoomUser = mongoose.model('ChatRoomUser');
-        var ChatRoomMessage = mongoose.model('ChatRoomMessage');
+        var ChatRoomEvent = mongoose.model('ChatRoomEvent');
 
         var thisChatRoomUser = null;
 
@@ -144,51 +160,52 @@ exports.init = function (args) {
 
                 this(chatRoomUser);
             },
-            // Get the unread messages
-            function findUnreadChatRoomMessages(chatRoomUser) {
-                console.log ('looking for messages created after :' + chatRoomUser.lastMessage);
+            // Get the unread events
+            function findUnreadChatRoomEvents(chatRoomUser) {
+                console.log ('looking for events created after :' + chatRoomUser.lastUpdated);
 
                 thisChatRoomUser = chatRoomUser;
 
-                ChatRoomMessage.find({
+                ChatRoomEvent.find({
                     room_name: room_name,
-                    created: {$gt: chatRoomUser.lastMessage}
+                    created: {$gt: chatRoomUser.lastUpdated}
                 }, this);
             },
-            function findUnreadChatRoomMessagesDone(err, messages) {
+            function findUnreadChatRoomEventsDone(err, events) {
                 if (err) { return cb (err) }
 
-                thisChatRoomUser.lastMessage = Date.now();
+                thisChatRoomUser.lastUpdated = Date.now();
                 thisChatRoomUser.save(function (err) {
                     if (err) { return cb (err) }
 
-                    return cb(null, messages);
+                    return cb(null, events);
                 });
             }
         );
     }; 
 
-    ChatRoomSchema.methods.sendMessage = function(from, message, cb) {
+    ChatRoomSchema.methods.sendMessage = function(username, message, cb) {
         console.log('ChatRoom.sendMessage ' + this.name);
-        return mongoose.model('ChatRoom').sendMessage(this.name, from, message, cb);
+        return mongoose.model('ChatRoom').sendMessage(this.name, username, message, cb);
     };
 
-    ChatRoomSchema.statics.sendMessage = function(room_name, from, message, cb) {
+    ChatRoomSchema.statics.sendMessage = function(room_name, username, message, cb) {
         console.log('ChatRoom.sendMessage');
         console.log('> room_name = ' + room_name);
-        console.log('> from = ' + from);
+        console.log('> username = ' + username);
         console.log('> message = ' + message);
 
-        var ChatRoomMessage = mongoose.model('ChatRoomMessage');
+        var ChatRoomEvent = mongoose.model('ChatRoomEvent');
 
         this.findOne({name: room_name}, function (err, room) {
             if (err) {
                 return cb(err);
             }
 
-            new ChatRoomMessage({
+            new ChatRoomEvent({
                 room_name: room_name,
-                from: from,
+                type: 'message',
+                username: username,
                 message: message
             }).save(function(err) {
                 if (err) {
@@ -212,7 +229,7 @@ exports.init = function (args) {
         name: 'global', // The global room
     })
 
-    globalRoom.sendMessage('jpickard', 'Welcome to node-game-server 20120101!', function(err) {
+    globalRoom.sendMessage('admin', 'Welcome to node-game-server 20120101!', function(err) {
         if (err) { throw (err) }
 
         globalRoom.save(function(err) {
@@ -220,11 +237,9 @@ exports.init = function (args) {
 
 
             // Example
-            globalRoom.getMessages(function(err, messages) {
-                console.log('messages:');
-                console.log(messages);
-                messages.forEach (function(message) {
-                    console.log(message.asString());
+            globalRoom.getEvents(function(err, events) {
+                events.forEach (function(message) {
+                    console.log(message.asString);
                 });
             });
         });
