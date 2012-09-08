@@ -2,6 +2,12 @@ function Chat() {
     this.room_name = null;
 }
 
+Chat.prototype.formatDate = function (dateStr) {
+    var d = new Date(dateStr);
+
+    return d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+}
+
 Chat.prototype.attach = function(room_name) {
     this.room_name = room_name;
 
@@ -33,6 +39,8 @@ Chat.prototype.processEvents = function (events) {
     var i,
         message;
 
+    console.log('processEvents: ' + events.length + ' events to process.');
+
     for (i = 0; i < events.length; i += 1) {
         message = events[i];
 
@@ -52,7 +60,6 @@ Chat.prototype.processEvents = function (events) {
 
 Chat.prototype.addError = function (errorMessage) {
     $('#chat-' + this.room_name + ' .message-box ul').append(
-        "<span class='timestamp'>[" + event.created + "] </span>" +
         "<li class='error-message'>" + errorMessage + "</li>");
 
     this.scrollDown();
@@ -61,7 +68,7 @@ Chat.prototype.addError = function (errorMessage) {
 Chat.prototype.addMessage = function (event) {
     $('#chat-' + this.room_name + ' .message-box ul').append(
         "<li class='message'>" +
-            "<span class='timestamp'>[" + event.created + "] </span>" +
+            "<span class='timestamp'>[" + this.formatDate(event.created) + "] </span>" +
             "<span class='username'>" + event.username + ": </span>" +
             "<span class='message'>" + event.message + "</span>" +
         "</li>"); // TODO Use Jade instead of this
@@ -72,7 +79,7 @@ Chat.prototype.addMessage = function (event) {
 Chat.prototype.addJoin = function (event) {
     $('#chat-' + this.room_name + ' .message-box ul').append(
         "<li class='message'>" +
-            "<span class='timestamp'>[" + event.created + "] </span>" +
+            "<span class='timestamp'>[" + this.formatDate(event.created) + "] </span>" +
             "<span class='username'>" + event.username + " joined </span>" +
         "</li>"); // TODO Use Jade instead of this
 
@@ -129,7 +136,7 @@ Chat.prototype.longPoll = function () {
                 this_chat.longPoll();
             }
 
-            if (data.events) {
+            if (data.events !== undefined) {
                 this_chat.processEvents (data.events);
             }
         }

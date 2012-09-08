@@ -1,6 +1,7 @@
 var mongoose = require('mongoose'),
     Schema   = mongoose.Schema,
-    step     = require('step');
+    step     = require('step'),
+    sanitize = require('validator').sanitize;
 
 var waiting = []; // Client connections waiting. Array of objects containing username and callback.
 
@@ -112,7 +113,7 @@ exports.chat_send = function (req, res) {
 
     step (
         function sendMessage() {
-            ChatRoom.sendMessage(req.body.room_name, req.session.username, req.body.message, this);
+            ChatRoom.sendMessage(req.body.room_name, req.session.username, sanitize(req.body.message).entityEncode(), this);
         },
         function sendMessageDone(err) {
             if (err) { throw (err); }
@@ -194,6 +195,8 @@ exports.chat_get_unread_events = function (req, res) {
         },
         function sendResponse(err) {
             if (err) {
+                req.session.destroy();
+
                 return res.send({
                     status: 0,
                     error: err.message
