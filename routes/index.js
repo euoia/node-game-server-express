@@ -2,7 +2,7 @@ var mongoose = require('mongoose'),
     Schema   = mongoose.Schema,
     step     = require('step');
 
-var waiting = [];
+var waiting = []; // Client connections waiting. Array of objects containing username and callback.
 
 exports.index = function(req, res){
     // This is the boring old default index
@@ -54,8 +54,24 @@ exports.login = function (req, res) {
             room_events = events;
             ChatRoom.join(room_name, this_account.username, this);
         },
-        function joinRoomDone(err) {
+        function joinRoomDone(err, join_response) {
+            var i;
             if (err) { throw (err); }
+
+            if (join_response.status == 'ALREADY_PRESENT') {
+                console.log ('User was apparently already in the room - '
+                    + 'searching whether the user was waiting and deleting the connection.');
+                /* Remove user from waiting list. */
+                /* Could use array filter but I want to log it. */
+                for (i=0; i < waiting.length; i += 1) {
+                    if (waiting[i].username == this_account.username) {
+                        console.log ('User ' + waiting[i].username + ' was already in room - removing');
+                        waiting[i].callback({'message': 'You have connected from elsewhere.'});
+                        waiting.splice(i, 1);
+                        i -= 1;
+                    }
+                }
+            }
 
             ChatRoom.getUsers(room_name, this);
         },
@@ -72,7 +88,7 @@ exports.login = function (req, res) {
                 real_name: this_account.real_name,
 
                 // Chat
-                events: room_events,
+                events: JSON.stringify(room_events),
                 room_name: room_name,
                 users: users
             });
@@ -176,7 +192,14 @@ exports.chat_get_unread_events = function (req, res) {
                 this();
             }
         },
-        function sendResponse() {
+        function sendResponse(err) {
+            if (err) {
+                return res.send({
+                    status: 0,
+                    error: err.message
+                }, 200);
+            }
+
             return res.send({
                 status: 1,
                 events: thisEvents

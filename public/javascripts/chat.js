@@ -52,6 +52,7 @@ Chat.prototype.processEvents = function (events) {
 
 Chat.prototype.addError = function (errorMessage) {
     $('#chat-' + this.room_name + ' .message-box ul').append(
+        "<span class='timestamp'>[" + event.created + "] </span>" +
         "<li class='error-message'>" + errorMessage + "</li>");
 
     this.scrollDown();
@@ -60,6 +61,7 @@ Chat.prototype.addError = function (errorMessage) {
 Chat.prototype.addMessage = function (event) {
     $('#chat-' + this.room_name + ' .message-box ul').append(
         "<li class='message'>" +
+            "<span class='timestamp'>[" + event.created + "] </span>" +
             "<span class='username'>" + event.username + ": </span>" +
             "<span class='message'>" + event.message + "</span>" +
         "</li>"); // TODO Use Jade instead of this
@@ -70,6 +72,7 @@ Chat.prototype.addMessage = function (event) {
 Chat.prototype.addJoin = function (event) {
     $('#chat-' + this.room_name + ' .message-box ul').append(
         "<li class='message'>" +
+            "<span class='timestamp'>[" + event.created + "] </span>" +
             "<span class='username'>" + event.username + " joined </span>" +
         "</li>"); // TODO Use Jade instead of this
 
@@ -99,24 +102,36 @@ Chat.prototype.send = function() {
 
 Chat.prototype.longPoll = function () {
     console.log ('longPoll...');
-    var chat_obj = this;
+    var this_chat = this;
 
     //TODO update the document title to include unread message count if blurred
     $.ajax({
         cache: false,
         type: "POST",
         url: "/chat/getUnreadEvents",
-        data: {room_name: chat_obj.room_name },
+        data: {room_name: this_chat.room_name },
         dataType: "json",
         error: function () {
-            chat_obj.addError("long poll error. trying again...");
+            this_chat.addError("long poll error. trying again...");
             //don't flood the servers on error, wait 10 seconds before retrying
-            setTimeout(chat_obj.longPoll, 10*1000);
+            setTimeout(this_chat.longPoll, 10*1000);
         },
         success: function (data) {
-            // Upon success we want to long poll again immediately.
-            chat_obj.longPoll();
-            chat_obj.processEvents (data.events);
+
+            if (data.status === 0) {
+                // 0 indicates a fatal (do not reconnect) error.
+                if (data.error) {
+                    this_chat.addError (data.error);
+                }
+
+            } else if (data.status == 1) {
+                // Upon success we want to long poll again immediately.
+                this_chat.longPoll();
+            }
+
+            if (data.events) {
+                this_chat.processEvents (data.events);
+            }
         }
     });
 }

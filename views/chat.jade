@@ -5,17 +5,6 @@ div.chat-window(id='chat-#{room_name}')
     span.room-name #{room_name}
   div.user-list
   div.message-box
-    ul
-      // Possible move the following into javascript calls
-      each event in events
-        if event.type === 'message'
-          li.message
-            span.username #{event.username}: 
-            span.event #{event.message}
-        else if event.type == 'join'
-          li.join
-            span.username #{event.username} joined
-        fi
   div.input
     form(id='form-#{room_name}')
       input.entry(name='message')
@@ -24,3 +13,5 @@ div.chat-window(id='chat-#{room_name}')
 script
   chat = new Chat();
   chat.attach('#{room_name}');
+
+  chat.processEvents(!{events});

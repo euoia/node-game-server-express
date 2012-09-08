@@ -74,6 +74,8 @@ exports.init = function (args) {
                 ChatRoomUser.findOne({room_name: room_name, username: username}, this);
             },
             function findChatRoomUserDone(err, chatRoomUser) {
+                var join_response; /* Return whether user was already in room. */
+
                 if (err) { return cb(err); }
 
                 console.log('found chat room user');
@@ -95,21 +97,25 @@ exports.init = function (args) {
                         }
                     })
 
+                    join_response = {'status' : 'OK'};
+
                 } else {
                     // Update chatRoomUser
                     chatRoomUser.lastUpdated = new Date();
                     console.log('User ' + username + ' was already in chat room \'' + room_name + '\'!');
+
+                    join_response = {'status' : 'ALREADY_PRESENT'};
                 }
 
                 chatRoomUser.save(function (err) {
                     if (err) { return cb(err) }
 
                     console.log('saved chatRoomUserSchema');
-                    return cb(null);
+                    return cb(null, join_response);
                 });
             }
         );
-    }
+    };
 
     ChatRoomSchema.statics.getUsers = function(room_name, cb) { // Example
         console.log('Called getUsers');
@@ -121,12 +127,12 @@ exports.init = function (args) {
 
             return cb(null, room.users);
         });
-    }; 
+    };
 
     ChatRoomSchema.methods.getEvents = function(cb) {
         console.log('getEvents ' + this.name);
         return mongoose.model('ChatRoom').getEvents(this.name, cb);
-    }; 
+    };
 
     ChatRoomSchema.statics.getEvents = function(room_name, cb) {
         console.log('getEvents');
