@@ -1,0 +1,60 @@
+<html>
+
+<head>
+<title>Testing some hexes</title>
+
+	<style type="text/css">
+		body {
+			background-color: #112211;
+			zoom: 50%;
+		}
+
+		.hex {
+			background-image: url('images/hex-grass.png');
+			position: absolute;
+			width: 118px;
+			height: 101px;
+
+			color: black;
+			font-size: 24px;
+			font-family: arial;
+			text-align: center;
+		}
+
+		@-webkit-keyframes rotate360 {
+			from {
+				-webkit-transform: perspective(50) rotateX(0deg);
+			}
+
+			to   {
+				-webkit-transform: perspective(50) rotateX(360deg);
+			}
+		}
+
+	</style>
+
+	<script type="text/javascript" src="javascripts/jquery-1.7.1.min.js"></script>
+	<script type="text/javascript" src="javascripts/Map.js"></script>
+	<script type="text/javascript" src="javascripts/Game.js"></script>
+	<script type="text/javascript" src="javascripts/Player.js"></script>
+	<script type="text/javascript">
+		var game; // Global game object.
+
+		function start () {
+			var num_rows = 10;
+			var num_cols = 20;
+
+			game = new Game();
+			game.init(num_rows, num_cols);
+		}
+	</script>
+<head>
+
+
+<body onload="start()">
+
+<div id='stage'>
+</div>
+
+</body>
+</html>
