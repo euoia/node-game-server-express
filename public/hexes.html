@@ -2,6 +2,9 @@
 
 <head>
 <title>Testing some hexes</title>
+	<!-- Google webfont -->
+	<link href='http://fonts.googleapis.com/css?family=Revalia' rel='stylesheet' type='text/css'>
+
 
 	<style type="text/css">
 		body {
@@ -31,21 +34,47 @@
 			}
 		}
 
+		.UI {
+			font-family: 'Revalia', cursive;
+			color: yellow;
+			font-size: 30pt;
+			position: absolute;
+		}
+
+		#UI-gold {
+			left: 1700;
+			top: 100px;
+		}
+
+		#UI-gamePhase {
+			left: 1700;
+			top: 200px;
+		}
+
+		#UI-unitPicker {
+			left: 1700;
+			top: 300px;
+		}
+
 	</style>
 
 	<script type="text/javascript" src="javascripts/jquery-1.7.1.min.js"></script>
 	<script type="text/javascript" src="javascripts/Map.js"></script>
 	<script type="text/javascript" src="javascripts/Game.js"></script>
 	<script type="text/javascript" src="javascripts/Player.js"></script>
+	<script type="text/javascript" src="javascripts/UI.js"></script>
 	<script type="text/javascript">
 		var game; // Global game object.
 
 		function start () {
+			var player_num = 2; // Right player.
+			var starting_gold = 200; // Right player.
+
 			var num_rows = 10;
 			var num_cols = 20;
 
 			game = new Game();
-			game.init(num_rows, num_cols);
+			game.init('stage', player_num, starting_gold, num_rows, num_cols);
 		}
 	</script>
 <head>

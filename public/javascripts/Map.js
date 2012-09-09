@@ -1,65 +1,98 @@
-function Map(nrows, ncols) {
+function Map(parentElementID, nrows, ncols) {
+	console.log ('Creating new map on ' + parentElementID + ' with ' + nrows + ' rows and ' + ncols + 'cols');
     this.num_rows     = nrows;   // Number of rows of hexes on the map.
 	this.num_cols     = ncols;   // Number of columns of hexes on the map.
 	this.tile_width   = null;    // Width in pixels of each tile.
 	this.tile_height  = null;    // Height in pixels of each tile.
 	this.is_rotating  = [];      // Array of hexes that are rotating (TODO: Investigate).
+	this.hexes        = [];      // 2D array of hexes.
+	this.parentElement = $('#' + parentElementID); // Element in which to draw.
 	
 	// TODO: Figure out where these values actually come from. Have they been
 	// fiddled based on the visible area of the hex?
 	this.tile_width = 82;
 	this.tile_height = 98;
+
+	// this.hexes[n][n] each contains an object that looks like:
+	// 'element'       - DOM element
+	// 'terrain'       - grass or water
+	// 'thing'         - a player thing: footman or archer
+	// 'thingplayer'   - owner of the thing: 1, 2, or null (no thing present).
+	// 'is_rotating'   - true or false
 }
 
 Map.prototype.drawHexGrid = function () {
-	var row, // Loop iterator for the row.
-		col; // Loop iterator for the column.
+	var row_i, // Loop iterator for the row index.
+		col_i, // Loop iterator for the column index.
+		this_map; // Pointer this 'this'.
 
 	// ROW MAJOR
 	console.log ('Drawing the grid (' + this.num_rows + ' by ' + this.num_cols + ')');
 
-	var tile_width = this.tile_width;
-	var tile_height = this.tile_height;
+	for (row_i = 0; row_i < this.num_rows; row_i++) {
+		console.log ('Drawing row ' + row_i);
+		this.hexes[row_i] = [];
 
-	for (row = 0; row < this.num_rows; row++) {
-		console.log ('Drawing row ' + row);
-		this.is_rotating[row] = Array();
-
-		for (col = 0; col < this.num_cols; col++) {
-			console.log ('Drawing col ' + col);
+		for (col_i = 0; col_i < this.num_cols; col_i++) {
+			console.log ('Drawing col ' + col_i);
 			// Don't draw the odd columns on the last row
-			if (row == this.num_rows && col % 2 == 1) {
+			if (row_i == this.num_rows && col_i % 2 == 1) {
 				continue;
 			}
 
-			this.is_rotating[row][col] = false;
+			this.hexes[row_i][col_i] = this.initHex(row_i, col_i);
+			this.updateHexTerrain(this.hexes[row_i][col_i], 'grass');
 
-			var id = row + '-' + col;
-			var y_offset;
-
-			if (col % 2 == 1) {
-				y_offset = tile_height / 2;
-			} else {
-				y_offset = 0;
-			}
-
-			var row_i, col_i;
-			row_i = tile_height * row + y_offset;
-			col_i = tile_width * col;
-
-
-			// Rotations
-			//$('#stage').append('<div id="hex-' + id + '" class="hex" onclick="rotate(this)" />')
-
-			// Place unit
-			$('#stage').append('<div id="hex-' + id + '" class="hex" onclick="game.map.placeUnit(this, \'footman\')" />');
-
-			$('#hex-' + id).css('left', col_i);
-			$('#hex-' + id).css('top', row_i);
-
-			$('#hex-' + id).html('<br />' + id);
+			this_map = this;
+			$(this.hexes[row_i][col_i].element).click(function () {
+				this_map.placeUnit(this, "footman");
+			});
 		}
 	}
+};
+
+Map.prototype.initHex = function (row_i, col_i) {
+	var xpos, ypos, y_offset;
+
+	// Offset the y value on every other column.
+	if (col_i % 2 == 1) {
+		y_offset = this.tile_height / 2;
+	} else {
+		y_offset = 0;
+	}
+
+	ypos = this.tile_height * row_i + y_offset;
+	xpos = this.tile_width * col_i;
+
+	var id = row_i + '-' + col_i;
+	console.log ('initalizing hex ' + id);
+
+	// Add to the DOM.
+	$(this.parentElement).append('<div id="hex-' + id + '" class="hex">');
+
+	// Position the hex.
+	$('#hex-' + id).css('left', xpos);
+	$('#hex-' + id).css('top', ypos);
+
+	$('#hex-' + id).html('<br />' + id);
+
+	/* Return the hex object. */
+	return {
+		'element'     : $('#hex-' + id),
+		'terrain'     : null,
+		'thing'       : null,
+		'thingplayer' : null,
+		'is_rotating' : false
+	};
+};
+
+Map.prototype.updateHexTerrain = function (hex, newTerrain) {
+	hex.terrain = newTerrain;
+	$(hex.element).css('background-image', 'images/hex-' + newTerrain + '.png');
+
+	// TODO: should really 'redraw' rather than setting the background image
+	// this way. If there is a unit on top then we want to display that
+	// instead.
 };
 
 Map.prototype.getNeighbourIDs = function (row_i, col_i) {
@@ -144,3 +177,7 @@ Map.prototype.rotateNeighbours  = function (row_i, col_i) {
 Map.prototype.placeUnit  = function (domElement, unit_name) {
 	$(domElement).css('background-image', 'url("images/hex-' + unit_name + '.png")');
 };
+
+/* Junk / not used code */
+// Rotations
+//$(this.parentElement).append('<div id="hex-' + id + '" class="hex" onclick="rotate(this)" />')
