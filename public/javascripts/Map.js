@@ -17,7 +17,7 @@ function Map(parentElementID, nrows, ncols) {
 	// 'element'       - DOM element
 	// 'terrain'       - grass or water
 	// 'thing'         - a player thing: footman or archer
-	// 'thingplayer'   - owner of the thing: 1, 2, or null (no thing present).
+	// 'thingPlayer'   - owner of the thing: 1, 2, or null (no thing present).
 	// 'is_rotating'   - true or false
 }
 
@@ -81,7 +81,7 @@ Map.prototype.initHex = function (row_i, col_i) {
 		'element'     : $('#hex-' + id),
 		'terrain'     : null,
 		'thing'       : null,
-		'thingplayer' : null,
+		'thingPlayer' : null,
 		'is_rotating' : false
 	};
 };
@@ -93,6 +93,11 @@ Map.prototype.updateHexTerrain = function (hex, newTerrain) {
 	// TODO: should really 'redraw' rather than setting the background image
 	// this way. If there is a unit on top then we want to display that
 	// instead.
+};
+
+Map.prototype.placeUnit = function (hex, player, unit) {
+	hex.thing = unit;
+	hex.thingPlayer = player;
 };
 
 Map.prototype.getNeighbourIDs = function (row_i, col_i) {
@@ -139,7 +144,6 @@ Map.prototype.getNeighbourIDs = function (row_i, col_i) {
 		return_ids.push ([row_i_mod, col_i + 1]);
 	}
 
-
 	return return_ids;
 };
 
@@ -153,6 +157,20 @@ Map.prototype.rotate = function (domElement) {
 	$(domElement).css('-webkit-animation', 'rotate360 1s infinite linear');
 };
 
+Map.prototype.placeUnit  = function (domElement, unit_name) {
+	$(domElement).css('background-image', 'url("images/hex-' + unit_name + '.png")');
+};
+
+Map.prototype.addFlag  = function (xpos, ypos, player) {
+	this.
+	$(domElement).css('background-image', 'url("images/hex-' + unit_name + '.png")');
+};
+
+
+/* Junk / not used code */
+// Rotations
+//$(this.parentElement).append('<div id="hex-' + id + '" class="hex" onclick="rotate(this)" />')
+/*
 Map.prototype.rotateNeighbours  = function (row_i, col_i) {
 	console.log ('rotateNeighbours ' + row_i + ' ' + col_i);
 	var neighbours = getNeighbourIDs(row_i, col_i);
@@ -173,11 +191,4 @@ Map.prototype.rotateNeighbours  = function (row_i, col_i) {
 		}
 	}
 };
-
-Map.prototype.placeUnit  = function (domElement, unit_name) {
-	$(domElement).css('background-image', 'url("images/hex-' + unit_name + '.png")');
-};
-
-/* Junk / not used code */
-// Rotations
-//$(this.parentElement).append('<div id="hex-' + id + '" class="hex" onclick="rotate(this)" />')
+*/
