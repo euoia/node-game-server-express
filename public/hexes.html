@@ -51,9 +51,43 @@
 			top: 200px;
 		}
 
-		#UI-unitPicker {
+		#UI-thingPicker {
 			left: 1700;
 			top: 300px;
+			width: 600px;
+		}
+
+		#UI-thingPicker .title {
+			margin-bottom: 20px;
+		}
+
+		#UI-thingPicker .thingsInPicker {
+			font-size: 20pt;
+		}
+
+		#UI-thingPicker .thingInPicker {
+			margin-bottom: 30px;
+			background-color: #404040;
+			padding: 10px;
+			clear: both;
+		}
+
+		#UI-thingPicker .selected {
+			padding: 2px;
+			border: 8px solid #66FF00;
+		}
+
+		#UI-thingPicker .icon {
+			display: inline;
+			float: left;
+		}
+
+		#UI-thingPicker .name {
+			display: inline;
+		}
+
+		#UI-thingPicker .cost {
+			float: right;
 		}
 
 	</style>
@@ -63,18 +97,17 @@
 	<script type="text/javascript" src="javascripts/Game.js"></script>
 	<script type="text/javascript" src="javascripts/Player.js"></script>
 	<script type="text/javascript" src="javascripts/UI.js"></script>
+	<script type="text/javascript" src="javascripts/Config.js"></script>
 	<script type="text/javascript">
 		var game; // Global game object.
+		var config = new Config();
 
 		function start () {
 			var player_num = 2; // Right player.
-			var starting_gold = 200; // Right player.
 
-			var num_rows = 10;
-			var num_cols = 20;
 
-			game = new Game();
-			game.init('stage', player_num, starting_gold, num_rows, num_cols);
+			game = new Game(config);
+			game.init('stage', player_num);
 		}
 	</script>
 <head>

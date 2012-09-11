@@ -16,7 +16,7 @@ function Map(parentElementID, nrows, ncols) {
 	// this.hexes[n][n] each contains an object that looks like:
 	// 'element'       - DOM element
 	// 'terrain'       - grass or water
-	// 'thing'         - a player thing: footman or archer
+	// 'thing'         - a player thing: footman, archer, flag
 	// 'thingPlayer'   - owner of the thing: 1, 2, or null (no thing present).
 	// 'is_rotating'   - true or false
 }
@@ -51,6 +51,7 @@ Map.prototype.drawHexGrid = function () {
 	}
 };
 
+// TODO: Use row and col instead of xpos and ypos.
 Map.prototype.initHex = function (row_i, col_i) {
 	var xpos, ypos, y_offset;
 
@@ -88,17 +89,87 @@ Map.prototype.initHex = function (row_i, col_i) {
 
 Map.prototype.updateHexTerrain = function (hex, newTerrain) {
 	hex.terrain = newTerrain;
-	$(hex.element).css('background-image', 'images/hex-' + newTerrain + '.png');
-
-	// TODO: should really 'redraw' rather than setting the background image
-	// this way. If there is a unit on top then we want to display that
-	// instead.
+	this.redrawHex(hex);
 };
+
+Map.prototype.updateHexThing = function (hex, newThing, newThingPlayer) {
+	hex.thing       = newThing;
+	hex.thingPlayer = newThingPlayer;
+	this.redrawHex(hex);
+}
+
+Map.prototype.redrawHex = function (hex) {
+	var thingFilename; // Filename of the thing.
+	console.log ('Redrawing hex:');
+	console.log(hex);
+
+	if (hex.thing === null) {
+		$(hex.element).css('background-image', 'images/hex-' + hex.terrain + '.png');
+		return;
+	}
+
+	// TODO: May need to look to the config for the thing filename.
+	thingFilename = 'images/hex-p' + hex.thingPlayer + '-' + hex.thing + '.png';
+
+	$(hex.element).css('background-image', 'url(' + thingFilename + ')');
+}
 
 Map.prototype.placeUnit = function (hex, player, unit) {
 	hex.thing = unit;
 	hex.thingPlayer = player;
 };
+
+Map.prototype.getHex = function (position) {
+	var row, // row index of the hex
+		col; // col index position of the hex.
+
+	if (position.row.pos !== undefined) {
+		// X is defined by position
+		if (position.row.pos > 0) {
+			row = position.row.pos;
+		} else {
+			// Negative number, offset from right of map.
+			row = this.num_cols + position.row.pos - 1;
+		}
+	} else if (position.row.pct !== undefined) {
+		// X is defined by percentage
+		if (position.row.pct > 0) {
+			row = Math.ceil( (this.num_rows - 1) * position.row.pct);
+		} else {
+			row = this.num_rows + Math.floor(this.num_rows * position.row.pct);
+		}
+	} else {
+		console.log(position);
+		throw 'Unable to handle position object X pos.'
+	}
+
+	console.log ('getHex row = ' + row)
+
+	if (position.col.pos !== undefined) {
+		// Y is defined by position
+		if (position.col.pos > 0) {
+			col = position.col.pos;
+		} else {
+			// Negative number, offset from right of map.
+			col = this.num_cols + position.col.pos - 1;
+		}
+	} else if (position.col.pct !== undefined) {
+		// y is defined by percentage
+		if (position.col.pct > 0) {
+			col = Math.ceil( (this.num_cols - 1)* position.col.pct);
+		} else {
+			col = this.num_cols + Math.floor(this.num_cols * position.col.pct);
+			// TODO: Test this rounding.
+		}
+	} else {
+		console.log(position);
+		throw 'Unable to handle position object.'
+	}
+
+	console.log ('getHex col = ' + col)
+
+	return this.hexes[row][col];
+}
 
 Map.prototype.getNeighbourIDs = function (row_i, col_i) {
 	var return_ids = new Array();
