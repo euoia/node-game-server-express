@@ -13,9 +13,10 @@ function UI(parentElementID) {
 	this.gamePhaseElement = null;
 	this.thingPickerElement = null;
 
-	/* thingsInPicker is an array of objects that have:
-	 * 'element' - The DOM element.
-	 * 'thing'   - The thing config.
+	/* thingsInPicker is an array of thingInPicker objects that have:
+	 * 'element'  - The DOM element.
+	 * 'thing'    - The thing config.
+	 * 'selected' - true or false. //TODO!
 	*/
 
 	// ---------------
@@ -67,7 +68,8 @@ UI.prototype.pushThingPicker = function (newThing) {
 };
 
 UI.prototype.generateThingInPickerElement = function (thing) {
-	var element; // the element to be returned.
+	var thisUI, // pointer to this thingInPicker object.
+		element; // the element to be returned.
 
 	html = '';
 	html += '<div class="icon"><img src="' + thing.hex_icon + '"></div>';
@@ -78,15 +80,36 @@ UI.prototype.generateThingInPickerElement = function (thing) {
 
 	element = $(document.createElement('div'));
 	$(element).addClass('thingInPicker');
+
+	thisUI = this;
 	$(element).click( function () {
+		console.log ('thingInPicker clicked:');
 		console.log (this);
-		$(this).addClass('selected');
+		thisUI.selectThing(element);
 	});
 
 	$(element).html(html);
 
 	return element;
 };
+
+// Select a thing from the picker. Only one thing can be selected.
+UI.prototype.selectThing = function (thingInPickerElement) {
+	console.log('selectThing:');
+	console.log (thingInPickerElement);
+	var thingInPickerIdx; // thingInPicker iterator.
+
+	for (thingInPickerIdx in this.thingsInPicker) {
+		console.log('Removing class from:')
+		$(this.thingsInPicker[thingInPickerIdx].element).removeClass('selected');
+	}
+
+	$(thingInPickerElement).addClass('selected');
+
+	// TODO: This is a bit of an ugly way to do this. We should check for
+	// equality in the loop, but I was having problems with that...
+}
+
 
 UI.prototype.redrawThingPicker = function () {
 	var
