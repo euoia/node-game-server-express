@@ -6,6 +6,8 @@ function Game(config) {
 	this.ui         = null;
 
 	this.config     = config;     // Configuration object.
+
+	Event.init(this);
 }
 
 // Initialize the game.
@@ -54,8 +56,12 @@ Game.prototype.init = function (
 		this.ui.pushThingPicker(this.config.things[thingIdx]);
 	}
 	
-
 	this.ui.redraw();
+
+	/* Event listeners. */
+
+	// Events dispatched by ui.
+	this.ui.listen ('thingSelected', this.thingSelected, this);
 };
 
 // Return the player object given the player number.
@@ -72,3 +78,11 @@ Game.prototype.getPlayer = function (
 
 	console.log ('ERROR: Invalid player number ' + playerNum);
 };
+
+Game.prototype.thingSelected = function ( eventObj ) {
+	console.log ('A thing was selected.');
+	console.log (eventObj);
+	console.log (this);
+	this.ui.selectThing(eventObj.thingInPicker);
+};
+

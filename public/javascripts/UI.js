@@ -36,6 +36,10 @@ function UI(parentElementID) {
 	// Thing picker
 	$(this.parentElement).append ('<div class="UI" id="UI-thingPicker"></div>');
 	this.thingPickerElement = $('#UI-thingPicker');
+
+	// ---------------
+	// Initialize events since this object is a dispatcher.
+	Event.init(this);
 }
 
 UI.prototype.changeGold = function (newGold) {
@@ -52,24 +56,31 @@ UI.prototype.changeGamePhase = function (newGamePhase) {
 	
 // Add 1 thing to the thing picker.
 UI.prototype.pushThingPicker = function (newThing) {
-	var thingElement,  // The DOM element for the thing in the picker.
-		thing;         // The thing.
+	var thisUI,        // pointer to this object.
+		thingElement,  // The DOM element for the thing in the picker.
+		thingInPicker; // This thing in the picker.
 
 	console.log ('Pushing onto thingsInPicker:');
 	console.log (newThing);
+	thisUI = this;
 
 	thingElement = this.generateThingInPickerElement(newThing);
-	thing = {
+	thingInPicker = {
 		'element'   : thingElement,
 		'thing'     : newThing
 	};
 
-	this.thingsInPicker.push(thing);
+	$(thingElement).click( function () {
+		thisUI.dispatch('thingSelected', {
+			'thingInPicker' : thingInPicker
+		});
+	});
+
+	this.thingsInPicker.push(thingInPicker);
 };
 
 UI.prototype.generateThingInPickerElement = function (thing) {
-	var thisUI, // pointer to this thingInPicker object.
-		element; // the element to be returned.
+	var element; // the element to be returned.
 
 	html = '';
 	html += '<div class="icon"><img src="' + thing.hex_icon + '"></div>';
@@ -80,36 +91,24 @@ UI.prototype.generateThingInPickerElement = function (thing) {
 
 	element = $(document.createElement('div'));
 	$(element).addClass('thingInPicker');
-
-	thisUI = this;
-	$(element).click( function () {
-		console.log ('thingInPicker clicked:');
-		console.log (this);
-		thisUI.selectThing(element);
-	});
-
 	$(element).html(html);
 
 	return element;
 };
 
 // Select a thing from the picker. Only one thing can be selected.
-UI.prototype.selectThing = function (thingInPickerElement) {
-	console.log('selectThing:');
-	console.log (thingInPickerElement);
+UI.prototype.selectThing = function (thingInPicker) {
 	var thingInPickerIdx; // thingInPicker iterator.
 
 	for (thingInPickerIdx in this.thingsInPicker) {
-		console.log('Removing class from:')
 		$(this.thingsInPicker[thingInPickerIdx].element).removeClass('selected');
 	}
 
-	$(thingInPickerElement).addClass('selected');
+	$(thingInPicker.element).addClass('selected');
 
 	// TODO: This is a bit of an ugly way to do this. We should check for
 	// equality in the loop, but I was having problems with that...
-}
-
+};
 
 UI.prototype.redrawThingPicker = function () {
 	var
@@ -128,12 +127,15 @@ UI.prototype.redrawThingPicker = function () {
 
 	// Add the contents.
 	this.thingPickerElement.append(thingsInPickerElement);
-}
-
+};
 
 // Redraw the elements with their current values.
 UI.prototype.redraw = function () {
 	this.changeGold(this.gold);
 	this.redrawThingPicker(this.units);
 	this.changeGamePhase(this.gamePhase);
+};
+
+UI.prototype.thingSelected = function () {
+	console.log ('UI thingSelected');
 }

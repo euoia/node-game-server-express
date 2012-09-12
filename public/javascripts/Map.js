@@ -30,11 +30,11 @@ Map.prototype.drawHexGrid = function () {
 	console.log ('Drawing the grid (' + this.num_rows + ' by ' + this.num_cols + ')');
 
 	for (row_i = 0; row_i < this.num_rows; row_i++) {
-		console.log ('Drawing row ' + row_i);
+		//console.log ('Drawing row ' + row_i);
 		this.hexes[row_i] = [];
 
 		for (col_i = 0; col_i < this.num_cols; col_i++) {
-			console.log ('Drawing col ' + col_i);
+			//console.log ('Drawing col ' + col_i);
 			// Don't draw the odd columns on the last row
 			if (row_i == this.num_rows && col_i % 2 == 1) {
 				continue;
@@ -66,7 +66,7 @@ Map.prototype.initHex = function (row_i, col_i) {
 	xpos = this.tile_width * col_i;
 
 	var id = row_i + '-' + col_i;
-	console.log ('initalizing hex ' + id);
+	//console.log ('Initializing hex ' + id);
 
 	// Add to the DOM.
 	$(this.parentElement).append('<div id="hex-' + id + '" class="hex">');
@@ -100,8 +100,8 @@ Map.prototype.updateHexThing = function (hex, newThing, newThingPlayer) {
 
 Map.prototype.redrawHex = function (hex) {
 	var thingFilename; // Filename of the thing.
-	console.log ('Redrawing hex:');
-	console.log(hex);
+	//console.log ('Redrawing hex:');
+	//console.log(hex);
 
 	if (hex.thing === null) {
 		$(hex.element).css('background-image', 'images/hex-' + hex.terrain + '.png');
