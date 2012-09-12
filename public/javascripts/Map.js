@@ -14,17 +14,21 @@ function Map(parentElementID, nrows, ncols) {
 	this.tile_height = 98;
 
 	// this.hexes[n][n] each contains an object that looks like:
-	// 'element'       - DOM element
-	// 'terrain'       - grass or water
-	// 'thing'         - a player thing: footman, archer, flag
-	// 'thingPlayer'   - owner of the thing: 1, 2, or null (no thing present).
-	// 'is_rotating'   - true or false
+	// 'element'          - DOM element
+	// 'terrain'          - grass or water
+	// 'thing'            - a thing object (See Config.things).
+	// 'thingPlayerNum'   - player num of thing owner: 1, 2, or null (no thing present).
+	// 'is_rotating'      - true or false
+
+	// ---------------
+	// Initialize events since this object is a dispatcher.
+	Event.init(this);
 }
 
 Map.prototype.drawHexGrid = function () {
 	var row_i, // Loop iterator for the row index.
 		col_i, // Loop iterator for the column index.
-		this_map; // Pointer this 'this'.
+		this_map; // Alias for this in inner function.
 
 	// ROW MAJOR
 	console.log ('Drawing the grid (' + this.num_rows + ' by ' + this.num_cols + ')');
@@ -44,9 +48,14 @@ Map.prototype.drawHexGrid = function () {
 			this.updateHexTerrain(this.hexes[row_i][col_i], 'grass');
 
 			this_map = this;
-			$(this.hexes[row_i][col_i].element).click(function () {
-				this_map.placeUnit(this, "footman");
-			});
+
+			$(this.hexes[row_i][col_i].element).click(function (hex) {
+				return function () {
+					this_map.dispatch('hexClicked', {
+						'hex' : hex
+					});
+				};
+			}(this.hexes[row_i][col_i]));
 		}
 	}
 };
@@ -79,11 +88,11 @@ Map.prototype.initHex = function (row_i, col_i) {
 
 	/* Return the hex object. */
 	return {
-		'element'     : $('#hex-' + id),
-		'terrain'     : null,
-		'thing'       : null,
-		'thingPlayer' : null,
-		'is_rotating' : false
+		'element'        : $('#hex-' + id),
+		'terrain'        : null,
+		'thing'          : null,
+		'thingPlayerNum' : null,
+		'is_rotating'    : false
 	};
 };
 
@@ -93,8 +102,8 @@ Map.prototype.updateHexTerrain = function (hex, newTerrain) {
 };
 
 Map.prototype.updateHexThing = function (hex, newThing, newThingPlayer) {
-	hex.thing       = newThing;
-	hex.thingPlayer = newThingPlayer;
+	hex.thing          = newThing;
+	hex.thingPlayerNum = newThingPlayer;
 	this.redrawHex(hex);
 }
 
@@ -102,21 +111,25 @@ Map.prototype.redrawHex = function (hex) {
 	var thingFilename; // Filename of the thing.
 	//console.log ('Redrawing hex:');
 	//console.log(hex);
+	
+	console.log('redrawHex');
+	console.log(hex);
 
 	if (hex.thing === null) {
 		$(hex.element).css('background-image', 'images/hex-' + hex.terrain + '.png');
 		return;
 	}
 
-	// TODO: May need to look to the config for the thing filename.
-	thingFilename = 'images/hex-p' + hex.thingPlayer + '-' + hex.thing + '.png';
+	thingFilename = 'images/hex-p' + hex.thingPlayerNum + '-' + hex.thing.name + '.png';
 
 	$(hex.element).css('background-image', 'url(' + thingFilename + ')');
 }
 
-Map.prototype.placeUnit = function (hex, player, unit) {
-	hex.thing = unit;
-	hex.thingPlayer = player;
+Map.prototype.placeThing = function (hex, playerNum, thing) {
+	hex.thingPlayerNum = playerNum;
+	hex.thing = thing;
+
+	this.redrawHex(hex);
 };
 
 Map.prototype.getHex = function (position) {
@@ -226,15 +239,6 @@ Map.prototype.rotate = function (domElement) {
 
 	rotateNeighbours (row_i, col_i);
 	$(domElement).css('-webkit-animation', 'rotate360 1s infinite linear');
-};
-
-Map.prototype.placeUnit  = function (domElement, unit_name) {
-	$(domElement).css('background-image', 'url("images/hex-' + unit_name + '.png")');
-};
-
-Map.prototype.addFlag  = function (xpos, ypos, player) {
-	this.
-	$(domElement).css('background-image', 'url("images/hex-' + unit_name + '.png")');
 };
 
 

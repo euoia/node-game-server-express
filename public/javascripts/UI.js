@@ -83,7 +83,7 @@ UI.prototype.generateThingInPickerElement = function (thing) {
 	var element; // the element to be returned.
 
 	html = '';
-	html += '<div class="icon"><img src="' + thing.hex_icon + '"></div>';
+	html += '<div class="icon"><img src="' + thing.picker_icon + '"></div>';
 	html += '<div class="name">' + thing.name + '</div>';
 	html += '<div class="cost">Cost: ' + thing.cost + '</div>';
 	html += '<div class="range">Range: ' + thing.range + '</div>';

@@ -41,18 +41,26 @@ Game.prototype.init = function (
 
 	// Create the UI
 	this.ui = new UI(stageElementID);
-	this.ui.changeGold(this.getPlayer(this.player_num).gold);
+	this.ui.changeGold(this.thisPlayer().gold);
 	this.ui.changeGamePhase(this.phase);
 
 	// Add the flags
 	for (flagIdx in this.config.flags) {
 		hex = this.map.getHex(this.config.flags[flagIdx].position);
 
-		this.map.updateHexThing (hex, 'flag', this.config.flags[flagIdx].player_num);
+		this.map.updateHexThing (
+			hex, 
+			this.config.things['flag'],
+			this.config.flags[flagIdx].player_num);
 	}
 
 	// Add pickable units
-	for (thingIdx in this.config.things) {
+	for (thingIdx in this.config.things ) {
+		if (this.config.things[thingIdx].cost === 0) {
+			// Cost 0 means do not display.
+			continue
+		}
+
 		this.ui.pushThingPicker(this.config.things[thingIdx]);
 	}
 	
@@ -62,6 +70,9 @@ Game.prototype.init = function (
 
 	// Events dispatched by ui.
 	this.ui.listen ('thingSelected', this.thingSelected, this);
+
+	// Events dispatched by map.
+	this.map.listen ('hexClicked', this.hexClicked, this);
 };
 
 // Return the player object given the player number.
@@ -79,10 +90,28 @@ Game.prototype.getPlayer = function (
 	console.log ('ERROR: Invalid player number ' + playerNum);
 };
 
+// Sugar.
+Game.prototype.thisPlayer = function () {
+	return this.getPlayer(this.player_num);
+};
+ 
 Game.prototype.thingSelected = function ( eventObj ) {
 	console.log ('A thing was selected.');
 	console.log (eventObj);
 	console.log (this);
 	this.ui.selectThing(eventObj.thingInPicker);
+	this.thisPlayer().selectedThing = eventObj.thingInPicker;
+};
+
+Game.prototype.hexClicked = function ( eventObj ) {
+	var selectThing; // Thing currently selected by this player.
+
+	selectedThing = this.thisPlayer().selectedThing;
+
+	this.map.placeThing(eventObj.hex, this.player_num, selectedThing.thing);
+
+	// TODO: hook these up using events.
+	this.thisPlayer().gold -= selectedThing.thing.cost;
+	this.ui.changeGold(this.thisPlayer().gold);
 };
 
