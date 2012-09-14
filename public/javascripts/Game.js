@@ -49,6 +49,12 @@ Game.prototype.init = function (
 	this.ui = new UI(stageElementID);
 	this.ui.changeGold(this.thisPlayer().gold);
 	this.ui.changeGamePhase(this.phase);
+	this.ui.startGamePhaseTimer(
+		this.config.phaseTimes[this.phase],
+		function () { alert('done'); }
+	);
+
+
 
 	// Add the flags
 	for (flagIdx in this.config.flags) {

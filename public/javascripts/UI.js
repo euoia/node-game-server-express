@@ -8,9 +8,12 @@ function UI(parentElementID) {
 	this.gold = 0;             // Currently dislayed gold.
 	this.thingsInPicker = [];  // Currently pickable things (TODO: define object).
 	this.gamePhase = null;     // Current game phase.
+	this.gamePhaseTime = null;     // Current game phase time remaining.
+
 
 	this.goldElement = null;
 	this.gamePhaseElement = null;
+	this.gamePhaseTimeElement = null;
 	this.thingPickerElement = null;
 
 	/* thingsInPicker is an array of thingInPicker objects that have:
@@ -31,7 +34,10 @@ function UI(parentElementID) {
 	// Phase of the game
 	$(this.parentElement).append ('<div class="UI" id="UI-gamePhase"></div>');
 	this.gamePhaseElement = $('#UI-gamePhase');
-	console.log ('UI created');
+
+	// Phase time remaining.
+	$(this.parentElement).append ('<div class="UI" id="UI-gamePhaseTime"></div>');
+	this.gamePhaseTimeElement = $('#UI-gamePhaseTime');
 
 	// Thing picker
 	$(this.parentElement).append ('<div class="UI" id="UI-thingPicker"></div>');
@@ -53,6 +59,10 @@ UI.prototype.changeGamePhase = function (newGamePhase) {
 	$(this.gamePhaseElement).html('Game Phase: ' + this.gamePhase);
 };
 
+UI.prototype.changeGamePhaseTime = function (newGamePhaseTime) {
+	this.gamePhaseTime = newGamePhaseTime;
+	$(this.gamePhaseTimeElement).html('Time remaining: ' + this.gamePhaseTime + 's');
+};
 	
 // Add 1 thing to the thing picker.
 UI.prototype.pushThingPicker = function (newThing) {
@@ -134,6 +144,42 @@ UI.prototype.redraw = function () {
 	this.changeGold(this.gold);
 	this.redrawThingPicker(this.units);
 	this.changeGamePhase(this.gamePhase);
+	this.changeGamePhaseTime(this.gamePhaseTime);
+};
+
+// Start the game phase timer and call finishedCallback when complete.
+// time - time in seconds.
+UI.prototype.startGamePhaseTimer = function (time, finishedCallback) {
+	var thisUI; // this.
+
+	thisUI = this;
+	this.changeGamePhaseTime (time);
+
+	setTimeout ( function () {
+		thisUI.updateGamePhaseTimer(
+			time - 1, // 1 second later
+			finishedCallback
+		);
+	}, 1000);
+};
+
+// Update the game phase timer. If complete, calll the callback.
+UI.prototype.updateGamePhaseTimer = function (time, finishedCallback) {
+	var thisUI; // this.
+
+	thisUI = this;
+	this.changeGamePhaseTime (time);
+
+	if (time <= 0) {
+		finishedCallback();
+	} else {
+		setTimeout ( function () {
+			thisUI.updateGamePhaseTimer(
+				time - 1, // 1 second later
+				finishedCallback
+			);
+		}, 1000);
+	}
 };
 
 UI.prototype.thingSelected = function () {
