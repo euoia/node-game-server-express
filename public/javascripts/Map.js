@@ -90,7 +90,7 @@ Map.prototype.initHex = function (row_i, col_i) {
 	return {
 		'element'        : $('#hex-' + id),
 		'terrain'        : null,
-		'thing'          : null,
+		'thing'          : null, // TODO: consider undefined? see hex.thing in Game.js
 		'thingPlayerNum' : null,
 		'is_rotating'    : false
 	};
@@ -105,15 +105,15 @@ Map.prototype.updateHexThing = function (hex, newThing, newThingPlayer) {
 	hex.thing          = newThing;
 	hex.thingPlayerNum = newThingPlayer;
 	this.redrawHex(hex);
-}
+};
 
 Map.prototype.redrawHex = function (hex) {
 	var thingFilename; // Filename of the thing.
 	//console.log ('Redrawing hex:');
 	//console.log(hex);
 	
-	console.log('redrawHex');
-	console.log(hex);
+	//console.log('redrawHex');
+	//console.log(hex);
 
 	if (hex.thing === null) {
 		$(hex.element).css('background-image', 'images/hex-' + hex.terrain + '.png');
@@ -123,7 +123,7 @@ Map.prototype.redrawHex = function (hex) {
 	thingFilename = 'images/hex-p' + hex.thingPlayerNum + '-' + hex.thing.name + '.png';
 
 	$(hex.element).css('background-image', 'url(' + thingFilename + ')');
-}
+};
 
 Map.prototype.placeThing = function (hex, playerNum, thing) {
 	hex.thingPlayerNum = playerNum;
@@ -136,53 +136,71 @@ Map.prototype.getHex = function (position) {
 	var row, // row index of the hex
 		col; // col index position of the hex.
 
-	if (position.row.pos !== undefined) {
-		// X is defined by position
-		if (position.row.pos > 0) {
-			row = position.row.pos;
+	row = this.convertPosToRow(position.row);
+	col = this.convertPosToCol(position.col);
+	return this.hexes[row][col];
+};
+
+Map.prototype.convertPosToRow = function (pos) {
+	var row; // row index of the hex
+
+	if (pos.idx !== undefined) {
+		// Row is defined by position.
+		if (pos.idx === 'MAX') {
+			row = this.num_rows;
+		} else if (pos.idx > 0) {
+			row = pos.idx;
 		} else {
 			// Negative number, offset from right of map.
-			row = this.num_cols + position.row.pos - 1;
+			row = this.num_cols + pos.idx - 1;
 		}
-	} else if (position.row.pct !== undefined) {
-		// X is defined by percentage
-		if (position.row.pct > 0) {
-			row = Math.ceil( (this.num_rows - 1) * position.row.pct);
+
+	} else if (pos.pct !== undefined) {
+		// Row is defined by percentage.
+		if (pos.pct >= 0) {
+			row = Math.ceil( (this.num_rows - 1) * pos.pct);
 		} else {
-			row = this.num_rows + Math.floor(this.num_rows * position.row.pct);
+			row = this.num_rows + Math.floor(this.num_rows * pos.pct);
 		}
 	} else {
-		console.log(position);
-		throw 'Unable to handle position object X pos.'
+		console.error('Unable to handle row position object.');
+		console.log(pos);
 	}
 
-	console.log ('getHex row = ' + row)
+	return row;
+};
 
-	if (position.col.pos !== undefined) {
-		// Y is defined by position
-		if (position.col.pos > 0) {
-			col = position.col.pos;
+Map.prototype.convertPosToCol = function (pos) {
+	var col; // col index of the hex
+
+	if (pos.idx !== undefined) {
+		// Column is defined by position.
+
+		if (pos.idx === 'MAX') {
+			col = this.num_cols;
+		} else if (pos.idx > 0) {
+			col = pos.idx;
 		} else {
 			// Negative number, offset from right of map.
-			col = this.num_cols + position.col.pos - 1;
+			col = this.num_cols + pos.idx - 1;
 		}
-	} else if (position.col.pct !== undefined) {
-		// y is defined by percentage
-		if (position.col.pct > 0) {
-			col = Math.ceil( (this.num_cols - 1)* position.col.pct);
+	} else if (pos.pct !== undefined) {
+		// Column is defined by percentage.
+
+		if (pos.pct >= 0) {
+			col = Math.ceil( (this.num_cols - 1)* pos.pct);
 		} else {
-			col = this.num_cols + Math.floor(this.num_cols * position.col.pct);
+			col = this.num_cols + Math.floor(this.num_cols * pos.pct);
 			// TODO: Test this rounding.
 		}
 	} else {
-		console.log(position);
-		throw 'Unable to handle position object.'
+		console.error('Unable to handle row position object.');
+		console.log(pos);
 	}
 
-	console.log ('getHex col = ' + col)
+	return col;
+};
 
-	return this.hexes[row][col];
-}
 
 Map.prototype.getNeighbourIDs = function (row_i, col_i) {
 	var return_ids = new Array();
@@ -241,29 +259,78 @@ Map.prototype.rotate = function (domElement) {
 	$(domElement).css('-webkit-animation', 'rotate360 1s infinite linear');
 };
 
+// Return the hexes covered by areas.
+Map.prototype.getAreasHexes = function (areas) {
+	var areaIdx,   // Iterator for areas.
+        row_i,     // Row iterator,
+		col_i,     // Col iterator,
+		row_min,   // Row minimum,
+		row_max,   // Row maximum,
+		col_min,   // Col minimum,
+		col_max,   // Col maximum.
+        retArr = [];    // Array of hexes to be returned.
 
-/* Junk / not used code */
+    for (areaIdx in areas) {
+        row_min = this.convertPosToRow(areas[areaIdx].rowMin);
+        row_max = this.convertPosToRow(areas[areaIdx].rowMax);
+
+        col_min = this.convertPosToCol(areas[areaIdx].colMin);
+        col_max = this.convertPosToCol(areas[areaIdx].colMax);
+
+        for (row_i = row_min; row_i <= row_max; row_i += 1) {
+            for (col_i = col_min; col_i <= col_max; col_i += 1) {
+                if  (retArr.indexOf(this.hexes[row_i][col_i]) == -1) {
+                    retArr.push(this.hexes[row_i][col_i]);
+                }
+            }
+        }
+    }
+
+    return retArr;
+};
+
+// Return the hexes covered by areas.
+Map.prototype.getAreaHexes = function (area) {
+    return this.getAreasHexes ( [area] );
+};
+
+// Highlight an area of hexes with highlightType highlight.
+Map.prototype.highlightArea = function (area, highlightType, test) {
+    var hexes, // Hexes covered by area.
+        hexesIdx; // Iterator for Hexes.
+
+	console.log('highlighting area:');
+	console.log(area);
+
+    hexes = this.getAreaHexes (area);
+    for (hexesIdx in hexes) {
+        if (test(hexes[hexesIdx]) === true) {
+            hexes[hexesIdx].element.addClass(highlightType);
+        }
+    }
+};
+
+
+// Junk / not used code
 // Rotations
 //$(this.parentElement).append('<div id="hex-' + id + '" class="hex" onclick="rotate(this)" />')
-/*
-Map.prototype.rotateNeighbours  = function (row_i, col_i) {
-	console.log ('rotateNeighbours ' + row_i + ' ' + col_i);
-	var neighbours = getNeighbourIDs(row_i, col_i);
-
-	var neighbour_id;
-	var n_row_i, n_col_i;
-	for (var i = 0; i < neighbours.length; i++) {
-		n_row_i = neighbours[i][0];
-		n_col_i = neighbours[i][1];
-
-		neighbour_id = 'hex-' + n_row_i + '-' + n_col_i;
-
-		$('#' + neighbour_id).css('-webkit-animation', 'rotate360 1s infinite linear');
-
-		if (this.is_rotating[n_row_i][n_col_i] === false) {
-			this.is_rotating[n_row_i][n_col_i] = true;
-			setTimeout('rotateNeighbours(' + neighbours[i][0] + ', ' + neighbours[i][1] + ')', 500);
-		}
-	}
-};
-*/
+//Map.prototype.rotateNeighbours  = function (row_i, col_i) {
+//	console.log ('rotateNeighbours ' + row_i + ' ' + col_i);
+//	var neighbours = getNeighbourIDs(row_i, col_i);
+//
+//	var neighbour_id;
+//	var n_row_i, n_col_i;
+//	for (var i = 0; i < neighbours.length; i++) {
+//		n_row_i = neighbours[i][0];
+//		n_col_i = neighbours[i][1];
+//
+//		neighbour_id = 'hex-' + n_row_i + '-' + n_col_i;
+//
+//		$('#' + neighbour_id).css('-webkit-animation', 'rotate360 1s infinite linear');
+//
+//		if (this.is_rotating[n_row_i][n_col_i] === false) {
+//			this.is_rotating[n_row_i][n_col_i] = true;
+//			setTimeout('rotateNeighbours(' + neighbours[i][0] + ', ' + neighbours[i][1] + ')', 500);
+//		}
+//	}
+//};

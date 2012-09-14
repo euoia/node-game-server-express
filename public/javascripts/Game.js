@@ -1,11 +1,12 @@
 function Game(config) {
-	this.players    = [];       // Array of Players
-	this.map        = null;     // The Map.
-	this.phase      = null;     // Current game phase
-	this.player_num = null;     // The player who's perspective this is (1 [left] or 2 [right])
-	this.ui         = null;
+	this.players	 = [];		 // Array of Players
+	this.map		 = null;	 // The Map.
+	this.phase		 = null;	 // Current game phase
+	this.player_nums = [];		 // Array of player numbers.
+	this.player_num  = null;	 // The player who's perspective this is (1 [left] or 2 [right])
+	this.ui			 = null;	 // The instance of UI.
 
-	this.config     = config;     // Configuration object.
+	this.config		= config;	  // Configuration object.
 
 	Event.init(this);
 }
@@ -15,9 +16,11 @@ Game.prototype.init = function (
 	stageElementID,
 	playerNum
 ) {
-	var flagIdx,  // Flag iterator index.
-		hex,      // Temporary hex object.
-		thingIdx; // Thing iterator index.
+	var flagIdx,	   // Flag iterator index.
+		hex,		   // Temporary hex object.
+		thingIdx,	   // Thing iterator index.
+		player,		   // Player instance.
+		playerIdx;	   // Player iterator.
 
 	this.phase = 'placement';
 
@@ -36,8 +39,11 @@ Game.prototype.init = function (
 	this.map.drawHexGrid();
 
 	// Create the players.
-	this.players.push (new Player(1, this.config.starting_gold));
-	this.players.push (new Player(2, this.config.starting_gold));
+	for (playerIdx in this.config.players) {
+		player = new Player(this.config.players[playerIdx]);
+		player.gold = this.config.starting_gold;
+		this.players.push(player);
+	}
 
 	// Create the UI
 	this.ui = new UI(stageElementID);
@@ -56,18 +62,18 @@ Game.prototype.init = function (
 
 	// Add pickable units
 	for (thingIdx in this.config.things ) {
-		if (this.config.things[thingIdx].cost === 0) {
+		if (this.config.things[thingIdx].cost === undefined) {
 			// Cost 0 means do not display.
-			continue
+			continue;
 		}
 
 		this.ui.pushThingPicker(this.config.things[thingIdx]);
 	}
-	
+
 	this.ui.redraw();
 
-	/* Event listeners. */
 
+	/* Event listeners. */
 	// Events dispatched by ui.
 	this.ui.listen ('thingSelected', this.thingSelected, this);
 
@@ -94,21 +100,76 @@ Game.prototype.getPlayer = function (
 Game.prototype.thisPlayer = function () {
 	return this.getPlayer(this.player_num);
 };
+
+
+/* Highlight placement areas. */
+Game.prototype.highlightPlacementAreas = function (playerNum) {
+	var areaIdx; // Iterator.
+
+
+	for (areaIdx in this.thisPlayer().placement_areas) {
+		this.map.highlightArea(
+			this.thisPlayer().placement_areas[areaIdx],
+			'placementArea',
+			function (hex) {
+				return (hex.thing === null);
+			});
+	}
+};
+
  
 Game.prototype.thingSelected = function ( eventObj ) {
 	console.log ('A thing was selected.');
 	console.log (eventObj);
-	console.log (this);
+	console.log (this.thisPlayer());
+
+	if (this.thisPlayer().selected_thing === null) {
+		// First selected thing.
+		console.log('Nothing was selected, highlighting placement areas.');
+		this.highlightPlacementAreas (this.player_num);
+	}
+
 	this.ui.selectThing(eventObj.thingInPicker);
 	this.thisPlayer().selectedThing = eventObj.thingInPicker;
 };
 
 Game.prototype.hexClicked = function ( eventObj ) {
-	var selectThing; // Thing currently selected by this player.
+	var selectThing,		   // Thing currently selected by this player.
+		playerPlacementAreas;  // The player's placement area.
 
 	selectedThing = this.thisPlayer().selectedThing;
 
+	if (selectedThing === undefined) {
+		console.log('Nothing selected.');
+		return;
+	}
+
+	if (eventObj.hex.thing !== null) {
+		console.log('Already something there.');
+		return;
+	}
+
+	if (this.thisPlayer().gold < selectedThing.thing.cost) {
+		console.log('Not enough gold.');
+		return;
+	}
+
+	// Check area is in placement area.
+	playerPlacementAreas = this.map.getAreasHexes(
+		this.thisPlayer().placement_areas);
+
+	console.log('playerPlacementAreas:');
+	console.log(playerPlacementAreas);
+
+	if (playerPlacementAreas.indexOf(eventObj.hex) == -1) {
+		console.log ('Hex is outside placement area.');
+		return;
+	}
+
+
+	// Just for testing.
 	this.map.placeThing(eventObj.hex, this.player_num, selectedThing.thing);
+	eventObj.hex.element.removeClass('placementArea');
 
 	// TODO: hook these up using events.
 	this.thisPlayer().gold -= selectedThing.thing.cost;
