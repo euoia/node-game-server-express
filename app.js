@@ -4,11 +4,11 @@
  */
 
 var express = require('express'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
     routes = require('./routes'),
     gameRoutes = require('./routes/game'),
     account = require('./account'),
-    chatRoom = require('./chatRoom'),
+    chatRoom = require('./chatRoom');
 
 var app = module.exports = express.createServer();
 
@@ -47,7 +47,8 @@ app.post('/chat/getUnreadEvents', routes.chat_get_unread_events); // TODO: Move 
 app.post('/chat/pollEvents', routes.chat_poll_events); // TODO: Move this to its own route file somehow
 
 // Game
-app.post('/init', gameRoutes.init);
+app.post('/game/init', gameRoutes.init);
+app.post('/game/getConfig', gameRoutes.getConfig);
 
 // ---------
 // Database

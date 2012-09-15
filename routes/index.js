@@ -39,7 +39,7 @@ exports.login = function (req, res) {
             if (err) { throw(err); }
 
             if (account === null) {
-                return res.render('error', {
+                return res.json({
                     title: 'Error!',
                     message: 'user not found.'
                 });
@@ -82,7 +82,7 @@ exports.login = function (req, res) {
             room_users = users;
 
             req.session.username = this_account.username;
-            return res.render('chat', {
+            return res.json({
                 // Account
                 title: 'Logged in',
                 username: this_account.username,
@@ -103,7 +103,7 @@ exports.chat_send = function (req, res) {
 
     if (req.session.username === undefined) {
         console.log('chat_send called without a valid session!');
-        res.send({error: "Invalid session."}, 200);
+        res.json({error: "Invalid session."});
         return;
     }
 
@@ -150,10 +150,10 @@ exports.chat_send = function (req, res) {
             this();
         },
         function sendResponse() {
-            return res.send({
+            return res.json({
                 status: 1,
                 events: thisEvents
-            }, 200);
+            });
         }
     );
 };
@@ -197,16 +197,16 @@ exports.chat_get_unread_events = function (req, res) {
             if (err) {
                 req.session.destroy();
 
-                return res.send({
+                return res.json({
                     status: 0,
                     error: err.message
-                }, 200);
+                });
             }
 
-            return res.send({
+            return res.json({
                 status: 1,
                 events: thisEvents
-            }, 200);
+            });
         }
     );
 };

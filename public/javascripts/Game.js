@@ -1,5 +1,6 @@
-function Game(config) {
+function Game() {
 
+	this.stage_element_id  = null;       // ID of the stage element.
 	this.players     = [];       // Array of Players
 	this.map         = null;     // The Map.
 	this.phase       = null;     // Current game phase object.
@@ -8,7 +9,7 @@ function Game(config) {
 	this.ui          = null;     // The instance of UI.
 	this.phase_end_callback = null; // Called when the current phase ends.
 
-	this.config     = config;     // Configuration object.
+	this.config     = null;     // Configuration object (retrieved from server).
 	
 	this.net        = null;         // Net object.
 
@@ -20,6 +21,20 @@ Game.prototype.init = function (
 	stageElementID,
 	playerNum)
 {
+	this.stage_element_id = stageElementID;
+	this.player_num = playerNum;
+	
+	// Connect to the server.
+	this.net = new Net();
+	this.net.login('jpickard', this.loginResponseReceived, this);
+};
+
+Game.prototype.loginResponseReceived = function () {
+	console.log('loginResponseReceived');
+	this.net.getConfig(this.getConfigResponseReceived, this);
+};
+
+Game.prototype.getConfigResponseReceived = function (configResponse) {
 	var thisGame = this,   // this object.
 		flagIdx,           // Flag iterator index.
 		hex,               // Temporary hex object.
@@ -27,14 +42,11 @@ Game.prototype.init = function (
 		player,            // Player instance.
 		playerIdx;         // Player iterator.
 
-	// Connect to the server.
-	this.net = new Net();
-	this.net.init();
+	console.log('getConfigResponseReceived.');
+	this.config = configResponse;
 	
-	this.player_num = playerNum;
-
 	// Create a map.
-	this.map = new Map (stageElementID, this.config.map_rows, this.config.map_cols);
+	this.map = new Map (this.stage_element_id, this.config.map_rows, this.config.map_cols);
 
 	// Draw the map.
 	this.map.drawHexGrid();
@@ -47,7 +59,7 @@ Game.prototype.init = function (
 	}
 
 	// Create the UI
-	this.ui = new UI(stageElementID);
+	this.ui = new UI(this.stage_element_id);
 	this.ui.changeGold(this.thisPlayer().gold);
 	// Add the flags
 	for (flagIdx in this.config.flags) {

@@ -181,17 +181,14 @@
 	<script type="text/javascript" src="javascripts/Game.js"></script>
 	<script type="text/javascript" src="javascripts/Player.js"></script>
 	<script type="text/javascript" src="javascripts/UI.js"></script>
-	<script type="text/javascript" src="javascripts/Config.js"></script>
 	<script type="text/javascript" src="javascripts/Net.js"></script>
 	<script type="text/javascript">
 		var game; // Global game object.
-		var config = new Config();
 
 		function start () {
 			var player_num = 2; // Right player.
 
-
-			game = new Game(config);
+			game = new Game();
 			game.init('stage', player_num);
 		}
 	</script>
