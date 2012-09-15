@@ -14,10 +14,13 @@ function Map(parentElementID, nrows, ncols) {
 	this.tile_height = 98;
 
 	// this.hexes[n][n] each contains an object that looks like:
+	// 'row'              - Row on map.
+	// 'col'              - Col on map.
 	// 'element'          - DOM element
 	// 'terrain'          - grass or water
 	// 'thing'            - a thing object (See Config.things).
 	// 'thingPlayerNum'   - player num of thing owner: 1, 2, or null (no thing present).
+	// 'thingMoveTarget'  - the hex where the thing is planning to move.
 	// 'is_rotating'      - true or false
 
 	// ---------------
@@ -56,6 +59,15 @@ Map.prototype.drawHexGrid = function () {
 					});
 				};
 			}(this.hexes[row_i][col_i]));
+
+			$(this.hexes[row_i][col_i].element).bind('mousedown', function (hex) {
+				return function (startEvent) {
+					this_map.dispatch('hexTouchStart', {
+						'hex' : hex,
+						'startEvent' : startEvent
+					});
+				};
+			}(this.hexes[row_i][col_i]));
 		}
 	}
 };
@@ -88,11 +100,14 @@ Map.prototype.initHex = function (row_i, col_i) {
 
 	/* Return the hex object. */
 	return {
-		'element'        : $('#hex-' + id),
-		'terrain'        : null,
-		'thing'          : null, // TODO: consider undefined? see hex.thing in Game.js
-		'thingPlayerNum' : null,
-		'is_rotating'    : false
+		'row'             : row_i,
+		'col'             : col_i,
+		'element'         : $('#hex-' + id),
+		'terrain'         : null,
+		'thing'           : null, // TODO: consider undefined? see hex.thing in Game.js
+		'thingPlayerNum'  : null,
+		'thingMoveTarget' : null,
+		'is_rotating'     : false
 	};
 };
 
@@ -116,11 +131,10 @@ Map.prototype.redrawHex = function (hex) {
 	//console.log(hex);
 
 	if (hex.thing === null) {
-		$(hex.element).css('background-image', 'images/hex-' + hex.terrain + '.png');
-		return;
+		thingFilename = 'images/hex-' + hex.terrain + '.png';
+	} else {
+		thingFilename = 'images/hex-p' + hex.thingPlayerNum + '-' + hex.thing.name + '.png';
 	}
-
-	thingFilename = 'images/hex-p' + hex.thingPlayerNum + '-' + hex.thing.name + '.png';
 
 	$(hex.element).css('background-image', 'url(' + thingFilename + ')');
 };
@@ -201,6 +215,60 @@ Map.prototype.convertPosToCol = function (pos) {
 	return col;
 };
 
+// Return a neighbouring hex of hex.
+// Will return null if the neighbour is invalid (off the map).
+Map.prototype.getHexNeighbour = function (hex, neighbour) {
+	var retNeighb = null, // Neighbour to return.
+		row_mod;          // Modified row index.
+		
+	/* Store a modified version of hex.row based on column so we can use sensible coords */
+	if (hex.col % 2 == 1) {
+		row_mod = hex.row + 1;
+	} else {
+		row_mod = hex.row;
+	}
+	
+	console.log ('With row ' + hex.row + ' and row_mod ' + row_mod + ' - Getting neighbour ' + neighbour + ' for hex:');
+	console.log (hex);
+
+	switch (neighbour) {
+		case 'up-left':
+			if (row_mod - 1 >= 0 && hex.col - 1 >= 0) {
+				retNeighb = this.hexes[row_mod - 1][hex.col -1];
+			}
+			break;
+		case 'down-left':
+			if (hex.col - 1 >= 0) {
+				retNeighb = this.hexes[row_mod][hex.col - 1];
+			}
+			break;
+		case 'down':
+			if (hex.row + 1 >= 0) {
+				retNeighb = this.hexes[hex.row + 1][hex.col];
+			}
+			break;
+		case 'down-right':
+			if (hex.col < this.num_cols) {
+				retNeighb = this.hexes[row_mod][hex.col + 1];
+			}
+			break;
+		case 'up-right':
+			if (row_mod - 1 >= 0 && hex.col + 1 < this.num_cols) {
+				retNeighb = this.hexes[row_mod - 1][hex.col + 1];
+			}
+			break;
+		case 'up':
+			if (hex.row - 1 >= 0) {
+				retNeighb = this.hexes[hex.row - 1][hex.col];
+			}
+			break;
+		default:
+			console.error ('Unknown type of neighbour: ' + neighbour);
+			break;
+	}
+	
+	return retNeighb;
+};
 
 Map.prototype.getNeighbourIDs = function (row_i, col_i) {
 	var return_ids = new Array();
@@ -294,6 +362,17 @@ Map.prototype.getAreaHexes = function (area) {
     return this.getAreasHexes ( [area] );
 };
 
+// Remove highlightType from an area.
+Map.prototype.unHighlightArea = function (area, highlightType, test) {
+    var hexes, // Hexes covered by area.
+        hexesIdx; // Iterator for Hexes.
+
+    hexes = this.getAreaHexes (area);
+    for (hexesIdx in hexes) {
+		hexes[hexesIdx].element.removeClass(highlightType);
+    }
+};
+	
 // Highlight an area of hexes with highlightType highlight.
 Map.prototype.highlightArea = function (area, highlightType, test) {
     var hexes, // Hexes covered by area.
@@ -310,6 +389,21 @@ Map.prototype.highlightArea = function (area, highlightType, test) {
     }
 };
 
+// Perform moves for the hex.
+Map.prototype.move = function (hex) {
+	if (hex.thingMoveTarget === null) {
+		//console.log ('No move target.');
+		return;
+	}
+	
+	hex.element.removeClass('selected');
+	hex.thingMoveTarget.element.removeClass('selected');
+	
+	this.updateHexThing(hex.thingMoveTarget, hex.thing, hex.thingPlayerNum);
+	this.updateHexThing(hex, null, null);
+	
+	hex.thingMoveTarget = null;
+};
 
 // Junk / not used code
 // Rotations

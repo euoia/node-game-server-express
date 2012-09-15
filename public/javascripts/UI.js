@@ -1,20 +1,26 @@
 function UI(parentElementID) {
+	var thisUI = this;
+	
 	// ---------------
 	// Object Variables
 	// Get the parent DOM element.
 	this.parentElement = $('#' + parentElementID);
 
 	// Store these in case we need to redraw or animate.
-	this.gold = 0;             // Currently dislayed gold.
-	this.thingsInPicker = [];  // Currently pickable things (TODO: define object).
-	this.gamePhase = null;     // Current game phase.
-	this.gamePhaseTime = null;     // Current game phase time remaining.
+	this.gold = 0;              // Currently dislayed gold.
+	this.thingsInPicker = [];   // Currently pickable things (TODO: define object).
+	this.gamePhase = null;      // Current game phase.
+	this.gamePhaseTime = null;  // Current game phase time remaining.
+	this.title = null;          // Current title.
+	this.timerState = null;     // 'running' or 'stopped'
 
 
 	this.goldElement = null;
 	this.gamePhaseElement = null;
 	this.gamePhaseTimeElement = null;
 	this.thingPickerElement = null;
+	this.titleElement = null;
+	this.doneButtonElement = null; // Button to end phase.
 
 	/* thingsInPicker is an array of thingInPicker objects that have:
 	 * 'element'  - The DOM element.
@@ -26,6 +32,10 @@ function UI(parentElementID) {
 
 	// ---------------
 	// Initialization
+
+	// ---------------
+	// Initialize events since this object is a dispatcher.
+	Event.init(this);
 
 	// Gold
 	$(this.parentElement).append ('<div class="UI" id="UI-gold"></div>');
@@ -43,9 +53,14 @@ function UI(parentElementID) {
 	$(this.parentElement).append ('<div class="UI" id="UI-thingPicker"></div>');
 	this.thingPickerElement = $('#UI-thingPicker');
 
-	// ---------------
-	// Initialize events since this object is a dispatcher.
-	Event.init(this);
+	// End Phase button.
+	$(this.parentElement).append ('<div class="UI" id="UI-doneButton"></div>');
+	this.doneButtonElement = $('#UI-doneButton');
+	this.doneButtonElement.html('Done');
+	this.doneButtonElement.click (function doneButtonClicked () {
+			thisUI.dispatch('doneButtonClicked');
+		});
+
 }
 
 UI.prototype.changeGold = function (newGold) {
@@ -60,8 +75,20 @@ UI.prototype.changeGamePhase = function (newGamePhase) {
 };
 
 UI.prototype.changeGamePhaseTime = function (newGamePhaseTime) {
+	var text; // Text to set the element to.
+	
 	this.gamePhaseTime = newGamePhaseTime;
-	$(this.gamePhaseTimeElement).html('Time remaining: ' + this.gamePhaseTime + 's');
+	
+	if (newGamePhaseTime === undefined) {
+		text = 'Paused.';
+	} else if (typeof(newGamePhaseTime) === 'number') {
+		text = 'Time remaining: ' + this.gamePhaseTime + 's';	
+	} else {
+		text = 'Time remaining: ' + this.gamePhaseTime;	
+	}
+	
+	$(this.gamePhaseTimeElement).html(text);
+
 };
 	
 // Add 1 thing to the thing picker.
@@ -108,16 +135,20 @@ UI.prototype.generateThingInPickerElement = function (thing) {
 
 // Select a thing from the picker. Only one thing can be selected.
 UI.prototype.selectThing = function (thingInPicker) {
+	this.resetPicker();
+	$(thingInPicker.element).addClass('selected');
+
+};
+
+// Reset the picker to an unselected state.
+UI.prototype.resetPicker = function () {
 	var thingInPickerIdx; // thingInPicker iterator.
 
 	for (thingInPickerIdx in this.thingsInPicker) {
+		// TODO: This is a bit of an ugly way to do this. We should check for
+		// equality in the loop, but I was having problems with that...
 		$(this.thingsInPicker[thingInPickerIdx].element).removeClass('selected');
 	}
-
-	$(thingInPicker.element).addClass('selected');
-
-	// TODO: This is a bit of an ugly way to do this. We should check for
-	// equality in the loop, but I was having problems with that...
 };
 
 UI.prototype.redrawThingPicker = function () {
@@ -149,39 +180,77 @@ UI.prototype.redraw = function () {
 
 // Start the game phase timer and call finishedCallback when complete.
 // time - time in seconds.
-UI.prototype.startGamePhaseTimer = function (time, finishedCallback) {
+UI.prototype.startGamePhaseTimer = function (time, finishedCallback, scope) {
 	var thisUI; // this.
 
 	thisUI = this;
 	this.changeGamePhaseTime (time);
+	this.timerState = 'running';
 
 	setTimeout ( function () {
 		thisUI.updateGamePhaseTimer(
 			time - 1, // 1 second later
-			finishedCallback
+			finishedCallback,
+			scope
 		);
 	}, 1000);
 };
 
 // Update the game phase timer. If complete, calll the callback.
-UI.prototype.updateGamePhaseTimer = function (time, finishedCallback) {
+UI.prototype.updateGamePhaseTimer = function (time, finishedCallback, scope) {
 	var thisUI; // this.
+	
+	if (this.timerState !== 'running') {
+		console.warn ('Timer has been stopped.');
+		return;
+	}
 
 	thisUI = this;
 	this.changeGamePhaseTime (time);
-
+	
 	if (time <= 0) {
-		finishedCallback();
+		finishedCallback.call (scope);
 	} else {
 		setTimeout ( function () {
 			thisUI.updateGamePhaseTimer(
 				time - 1, // 1 second later
-				finishedCallback
-			);
+				finishedCallback,
+				scope);
 		}, 1000);
 	}
 };
 
+// Stop the timer.
+UI.prototype.stopGamePhaseTimer = function () {
+	this.timerState = 'stopped';
+};
+
+
 UI.prototype.thingSelected = function () {
 	console.log ('UI thingSelected');
-}
+};
+
+// Overlay a big title in the middle of the screen.
+UI.prototype.changeTitle = function (title) {
+	if (this.titleElement === null) {
+		$(this.parentElement).append ('<div class="UI" id="UI-title"></div>');
+		this.titleElement = $('#UI-title');
+	}
+	
+	this.titleElement.html(title);
+};
+
+UI.prototype.removeTitle = function () {
+	$(this.titleElement).remove();
+	this.titleElement = null;
+};
+
+UI.prototype.showDoneButton = function () {
+	this.doneButtonElement.show();
+	this.doneButtonElement.addClass('button-flash');
+};
+
+UI.prototype.hideDoneButton = function () {
+	this.doneButtonElement.hide();
+	this.doneButtonElement.removeClass('button-flash');
+};
