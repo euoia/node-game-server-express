@@ -8,6 +8,10 @@ function Map(parentElementID, nrows, ncols) {
 	this.hexes        = [];      // 2D array of hexes.
 	this.parentElement = $('#' + parentElementID); // Element in which to draw.
 	
+	this.browser      = new Browser();    // Browser object for browser features.
+	
+	this.arrows       = [];       // Array of arrow elements from one hex to another.
+	
 	// TODO: Figure out where these values actually come from. Have they been
 	// fiddled based on the visible area of the hex?
 	this.tile_width = 82;
@@ -60,13 +64,15 @@ Map.prototype.drawHexGrid = function () {
 				};
 			}(this.hexes[row_i][col_i]));
 
-			$(this.hexes[row_i][col_i].element).bind('mousedown', function (hex) {
-				return function (startEvent) {
-					this_map.dispatch('hexTouchStart', {
-						'hex' : hex,
-						'startEvent' : startEvent
-					});
-				};
+			$(this.hexes[row_i][col_i].element).bind(
+				this.browser.touchStart,
+				function hexTouchStart (hex) {
+					return function (startEvent) {
+						this_map.dispatch('hexTouchStart', {
+							'hex' : hex,
+							'startEvent' : startEvent
+						});
+					};
 			}(this.hexes[row_i][col_i]));
 		}
 	}
@@ -131,9 +137,9 @@ Map.prototype.redrawHex = function (hex) {
 	//console.log(hex);
 
 	if (hex.thing === null) {
-		thingFilename = 'images/hex-' + hex.terrain + '.png';
+		thingFilename = '/images/hex-' + hex.terrain + '.png';
 	} else {
-		thingFilename = 'images/hex-p' + hex.thingPlayerNum + '-' + hex.thing.name + '.png';
+		thingFilename = '/images/hex-p' + hex.thingPlayerNum + '-' + hex.thing.name + '.png';
 	}
 
 	$(hex.element).css('background-image', 'url(' + thingFilename + ')');
@@ -270,53 +276,6 @@ Map.prototype.getHexNeighbour = function (hex, neighbour) {
 	return retNeighb;
 };
 
-Map.prototype.getNeighbourIDs = function (row_i, col_i) {
-	var return_ids = new Array();
-	row_i = parseInt(row_i, 10);
-	col_i = parseInt(col_i, 10);
-
-	/* Store a modified version of row_i based on column so we can use sensible coords */
-	var row_i_mod;
-
-	if (col_i % 2 == 1) {
-		row_i_mod = row_i + 1;
-	} else {
-		row_i_mod = row_i;
-	}
-
-	/* Up-Left */
-	if (row_i_mod - 1 > 0 && col_i - 1 > 0) {
-		return_ids.push ([row_i_mod - 1, col_i - 1]);
-	}
-
-	/* Up */
-	if (row_i - 1 > 0) {
-		return_ids.push ([row_i - 1, col_i]);
-	}
-
-	/* Up-right */
-	if (row_i_mod - 1 > 0 && col_i + 1 < this.num_cols) {
-		return_ids.push ([row_i_mod - 1, col_i + 1]);
-	}
-
-	/* Down-Left */
-	if (col_i - 1 > 0) {
-		return_ids.push ([row_i_mod, col_i - 1]);
-	}
-
-	/* Down */
-	if (row_i + 1 > 0) {
-		return_ids.push ([row_i + 1, col_i]);
-	}
-
-	/* Down-right */
-	if (col_i < this.num_cols) {
-		return_ids.push ([row_i_mod, col_i + 1]);
-	}
-
-	return return_ids;
-};
-
 Map.prototype.rotate = function (domElement) {
 
 	var match = new RegExp(/hex-(\d+)-(\d+)/).exec(domElement.id);
@@ -404,6 +363,118 @@ Map.prototype.move = function (hex) {
 	
 	hex.thingMoveTarget = null;
 };
+
+// Given an angle, return the neighbour name.
+Map.prototype.angleToNeighbName = function (angle) {
+	var neighbName;
+	
+	// Angle starts at 0 directly up, and increases counter-clockwise.
+	if (angle >= 30 && angle < 90) {
+		neighbName = 'up-left';
+	} else if (angle >= 90 && angle < 150) {
+		neighbName = 'down-left';
+	} else if (angle >= 150 && angle < 210) {
+		neighbName = 'down';
+	} else if (angle >= 210 && angle < 270) {
+		neighbName = 'down-right';
+	} else if (angle >= 270 && angle < 330) {
+		neighbName = 'up-right';
+	} else  {
+		neighbName = 'up';
+	}
+	
+	return neighbName;
+};
+
+// Given an neighbour name, return the angle.
+Map.prototype.neighbNameToAngle = function (neighbName) {
+	var angle;
+	
+	// Angle starts at 0 directly up, and increases counter-clockwise.
+	if (neighbName === 'up-left') {
+		angle = -60;
+	} else if (neighbName === 'down-left') {
+		angle = -120;
+	} else if (neighbName === 'down') {
+		angle = -180;
+	} else if (neighbName === 'down-right') {
+		angle = -240;
+	} else if (neighbName === 'up-right') {
+		angle = -300;
+	} else if (neighbName === 'up') {
+		angle = 0;
+	} else {
+		console.error ('Invalid neighbour name: ' + neighbName);
+		angle = null;
+	}
+	
+	return angle;
+};
+
+// Get the 'neighbour name' going from from_hex to to_hex.
+Map.prototype.getHexFromToNeighbName = function (from_hex, to_hex) {
+	var retNeighbName = null, // Neighbour to return.
+		from_hex_row_mod; // Modified row index.
+		
+	
+	/* Store a modified version of from_hex.row based on column so we can use sensible coords */
+	if (from_hex.col % 2 == 1) {
+		from_hex_row_mod = from_hex.row + 1;
+	} else {
+		from_hex_row_mod = from_hex.row;
+	}
+	
+	if (from_hex_row_mod - 1 === to_hex.row && from_hex.col - 1 === to_hex.col) {
+		retNeighbName = 'up-left';
+	} else if (from_hex_row_mod === to_hex.row && from_hex.col - 1 === to_hex.col) {
+		retNeighbName = 'down-left';
+	} else if (from_hex.row + 1 == to_hex.row && from_hex.col === to_hex.col) {
+		retNeighbName = 'down';
+	} else if (from_hex_row_mod === to_hex.row && from_hex.col + 1 === to_hex.col) {
+		retNeighbName = 'down-right';
+	} else if (from_hex_row_mod - 1 === to_hex.row && from_hex.col + 1 === to_hex.col) {
+		retNeighbName = 'up-right';
+	} else if (from_hex.row - 1 === to_hex.row && from_hex.col === to_hex.col) {
+		retNeighbName = 'up';
+	} else {
+		console.error ('Hexes are not neighbours (from, to):');
+		console.error (from_hex);
+		console.error (to_hex);
+	}
+	
+	return retNeighbName;
+};
+
+Map.prototype.arrowFromTo = function (from_hex, to_hex) {
+	var avgLeft, // Average xPos.
+		avgTop, // Average yPos.
+		arrow, // The new arrow.
+		angle; // Angle to rotate the arrow at.
+		
+	arrow = $('<div class="arrow"></div>');
+	$(this.parentElement).append(arrow);
+	
+	avgLeft = ($(from_hex.element).offset().left + $(to_hex.element).offset().left) / 2;
+	avgTop = ($(from_hex.element).offset().top + $(to_hex.element).offset().top) / 2;
+	
+	$(arrow).offset({left: avgLeft, top: avgTop});
+	
+	angle = this.neighbNameToAngle (
+		this.getHexFromToNeighbName(from_hex, to_hex));
+		
+	arrow.css('-webkit-transform', 'rotate(' + angle + 'deg)');
+	this.arrows.push(arrow);
+};
+
+Map.prototype.clearArrows = function () {
+	var arrow;
+	
+	while (this.arrows.length) {
+		arrow = this.arrows.pop();
+		$(arrow).remove();
+	}
+};
+
 
 // Junk / not used code
 // Rotations

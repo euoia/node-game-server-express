@@ -10,28 +10,26 @@ function Game() {
 	this.phase_end_callback = null; // Called when the current phase ends.
 
 	this.config     = null;     // Configuration object (retrieved from server).
-	
-	this.net        = null;         // Net object.
+	this.net        = null;     // Net object.
 
+	this.browser    = new Browser(); // Browser object for browser features.
 	Event.init(this);
 }
 
 // Initialize the game.
-Game.prototype.init = function (
-	stageElementID,
-	playerNum)
-{
+Game.prototype.init = function (stageElementID) {
 	this.stage_element_id = stageElementID;
-	this.player_num = playerNum;
 	
 	// Connect to the server.
+	//this.net.send('login', {'username':'jpickard'}, this.loginResponseReceived, this);
+	
 	this.net = new Net();
-	this.net.login('jpickard', this.loginResponseReceived, this);
+	this.net.send('getConfig', {}, this.getConfigResponseReceived, this);
 };
 
 Game.prototype.loginResponseReceived = function () {
 	console.log('loginResponseReceived');
-	this.net.getConfig(this.getConfigResponseReceived, this);
+	this.net.send('getConfig', {}, this.getConfigResponseReceived, this);
 };
 
 Game.prototype.getConfigResponseReceived = function (configResponse) {
@@ -41,10 +39,12 @@ Game.prototype.getConfigResponseReceived = function (configResponse) {
 		thingIdx,          // Thing iterator index.
 		player,            // Player instance.
 		playerIdx;         // Player iterator.
-
+		
 	console.log('getConfigResponseReceived.');
-	this.config = configResponse;
 	
+	// Set the config.
+	this.config = configResponse;
+
 	// Create a map.
 	this.map = new Map (this.stage_element_id, this.config.map_rows, this.config.map_cols);
 
@@ -60,7 +60,8 @@ Game.prototype.getConfigResponseReceived = function (configResponse) {
 
 	// Create the UI
 	this.ui = new UI(this.stage_element_id);
-	this.ui.changeGold(this.thisPlayer().gold);
+	this.ui.changeGold(this.config.starting_gold);
+	
 	// Add the flags
 	for (flagIdx in this.config.flags) {
 		hex = this.map.getHex(this.config.flags[flagIdx].position);
@@ -83,6 +84,31 @@ Game.prototype.getConfigResponseReceived = function (configResponse) {
 
 	this.ui.redraw();
 	
+	// Attempt to start the game.
+	this.net.longPoll('startGame', {}, this.startGame, this);
+	this.ui.changeNotice ('Waiting for second player to join.');
+};
+
+Game.prototype.startGame = function (startGameResponse) {
+	var playerIdx; // Iterator for player object that comes back from startGameResponse.
+	
+	this.ui.resetNotice ();
+	if (startGameResponse.status === 'error') {
+		// Nothing more we can do here.
+		this.ui.changeNotice ('Error occurred: ' + startGameResponse.message);
+		return;
+	}
+	
+	this.player_num = startGameResponse.playerNum;
+	
+	// Create the players.
+	// Add information about the player's received from the server.
+	for (playerIdx in startGameResponse.players) {
+		this.getPlayerByNum(
+			startGameResponse.players[playerIdx].playerNum).username = 
+			startGameResponse.players[playerIdx].username;
+	}
+	
 	this.beginPlacementPhase();
 
 	/* Event listeners. */
@@ -97,9 +123,9 @@ Game.prototype.getConfigResponseReceived = function (configResponse) {
 };
 
 // Return the player object given the player number.
-Game.prototype.getPlayer = function (
-	playerNum
-) {
+Game.prototype.getPlayerByNum = function (
+	playerNum)
+{
 	var playerIdx;
 
 	for (playerIdx in this.players) {
@@ -109,11 +135,28 @@ Game.prototype.getPlayer = function (
 	}
 
 	console.log ('ERROR: Invalid player number ' + playerNum);
+	return null;
+};
+
+// Return the player object given the username.
+Game.prototype.getPlayer = function (
+	username)
+{
+	var playerIdx;
+
+	for (playerIdx in this.players) {
+		if (this.players[playerIdx].username === username) {
+			return this.players[playerIdx];
+		}
+	}
+
+	console.log ('ERROR: Invalid player username ' + username);
+	return null;
 };
 
 // Sugar.
 Game.prototype.thisPlayer = function () {
-	return this.getPlayer(this.player_num);
+	return this.getPlayerByNum(this.player_num);
 };
 
 // Reset placement area highlight.
@@ -184,7 +227,7 @@ Game.prototype.hexTouchStart = function ( eventObj ) {
 	
 	eventObj.hex.element.addClass('selected');
 	
-	$(document).bind('mousemove', function mouseMove (moveEvent) {
+	$(document).bind(this.browser.touchMove, function mouseMove (moveEvent) {
 		console.log('moved');
 		console.log (moveEvent);
 		
@@ -196,28 +239,11 @@ Game.prototype.hexTouchStart = function ( eventObj ) {
 		angle = Math.atan2 (xDiff, yDiff)  * (180/Math.PI);
 		angle = angle + 180; // 0 to 360; easier to reason about.
 		
-		// Calculate which neighbour to highlight.
-		// Angle starts at 0 directly up, and increases counter-clockwise.
-		if (angle >= 30 && angle < 90) {
-			hexNeighb = thisGame.map.getHexNeighbour(eventObj.hex, 'up-left');
-			console.log('up left');
-		} else if (angle >= 90 && angle < 150) {
-			hexNeighb = thisGame.map.getHexNeighbour(eventObj.hex, 'down-left');
-			console.log('down left');
-		} else if (angle >= 150 && angle < 210) {
-			hexNeighb = thisGame.map.getHexNeighbour(eventObj.hex, 'down');
-			console.log('down');
-		} else if (angle >= 210 && angle < 270) {
-			hexNeighb = thisGame.map.getHexNeighbour(eventObj.hex, 'down-right');
-			console.log('down right');
-		} else if (angle >= 270 && angle < 330) {
-			hexNeighb = thisGame.map.getHexNeighbour(eventObj.hex, 'up-right');
-			console.log('up right');
-		} else  {
-			hexNeighb = thisGame.map.getHexNeighbour(eventObj.hex, 'up');
-			console.log('up');
-		}
-		
+		// Get the neighbour at that angle.
+		hexNeighb = thisGame.map.getHexNeighbour(
+			eventObj.hex,
+			thisGame.map.angleToNeighbName(angle));
+			
 		if (hexNeighb.thing !== null) {
 			console.log ('Something already there.');
 		} else if (hexNeighb !== null) { 
@@ -231,10 +257,17 @@ Game.prototype.hexTouchStart = function ( eventObj ) {
 		}
 	});
 	
-	$(document).bind('mouseup', function mouseUp () {
+	$(document).bind(this.browser.touchEnd, function mouseUp () {
 		console.log ('mouse up');
-		$(document).unbind('mousemove');
-		$(document).unbind('mouseup');
+		eventObj.hex.element.removeClass('selected');
+		$(document).unbind(thisGame.browser.touchMove);
+		$(document).unbind(thisGame.browser.touchEnd);
+		
+		if (eventObj.hex.thingMoveTarget !== null) {
+			thisGame.map.arrowFromTo (
+				eventObj.hex,
+				eventObj.hex.thingMoveTarget);
+		}
 	});
 };
 
@@ -281,6 +314,9 @@ Game.prototype.hexClicked = function ( eventObj ) {
 	// Just for testing.
 	this.map.placeThing(eventObj.hex, this.player_num, selectedThing.thing);
 	eventObj.hex.element.removeClass('placementArea');
+	
+	console.log('adding to phasePlacements');
+	this.thisPlayer().phasePlacements.push(eventObj.hex);
 	
 	// TODO: hook these up using events.
 	this.thisPlayer().gold -= selectedThing.thing.cost;
@@ -349,7 +385,6 @@ Game.prototype.endCurrentPhase = function () {
 	console.log(this.phase_end_callback);
 	this.ui.stopGamePhaseTimer();
 	if (this.phase_end_callback !== null) {
-		
 		callback = this.phase_end_callback;
 		this.phase_end_callback = null;
 		callback.call(this);
@@ -362,32 +397,119 @@ Game.prototype.beginPlacementPhase = function () {
 };
 
 Game.prototype.endPlacementPhase = function () {
+	console.log ('Ending placement phase.');
+	
+	this.net.send(
+		'doPlacements',
+		{'placements' : 
+			this.net.formatPlacements(this.thisPlayer().phasePlacements)},
+		this.resolvePlacementPhase,
+		this);
+		
+	this.ui.changeNotice ('Waiting for second player to place.');
+	this.ui.hideDoneButton();
+};
+
+// Receive response from server regarding the placement phase.
+Game.prototype.resolvePlacementPhase = function (doPlacementsResponse) {
+	var placements,         // Placements for all players.
+		playerPlacements,   // Placements for a single player.
+		playerName,    // Iterator for the placements object.
+		placementIdx,  // Iterator for the placement array.
+		placement;     // A single item in the placement array.
+	
+	this.ui.resetNotice ();
+	console.log('Placements received:');
+	console.log(doPlacementsResponse);
+	
+	placements = doPlacementsResponse.placements;
+	for (playerName in placements) {
+		
+		// One per player.
+		if (playerName !== this.thisPlayer().username) {
+			playerPlacements = placements[playerName];
+			console.log ('Placing for ' + playerName);
+			console.log (playerPlacements);
+			
+			// Place other players' things.
+			for (placementIdx in playerPlacements) {
+				placement = playerPlacements[placementIdx];
+				console.log ('Placing:');
+				console.log (placement);
+				
+				this.map.placeThing (
+					this.map.hexes[placement.row][placement.col],
+					this.getPlayer(playerName).player_num,	
+					this.config.things[placement.thingName]);
+			}
+		}
+	}
+	
 	this.beginOrderPhase();
 };
 
 Game.prototype.beginOrderPhase = function () {
-	this.phase_end_callback = this.beginBattlePhase;
+	this.phase_end_callback = this.endOrderPhase;
 	this.changePhase('order');
 };
 
-Game.prototype.beginBattlePhase = function () {
+Game.prototype.endOrderPhase = function () {
+	console.log ('Ending order phase.');
+	
+	this.net.send(
+		'doOrders',
+		{'orders' : this.net.formatOrders(this.map)},
+		this.beginBattlePhase,
+		this);
+		
+	this.ui.changeNotice ('Waiting for second player to complete orders.');
+	this.ui.hideDoneButton();
+};
+
+
+Game.prototype.beginBattlePhase = function (doOrdersResponse) {
 	var thisGame = this,
 		phaseChangeDone; // callback for when the phase change animation is complete.
 	
+	this.ui.resetNotice ();
+	
 	phaseChangeDone = function () {
-		thisGame.moveUnits();
+		this.map.clearArrows();
+		thisGame.performOrders(doOrdersResponse.orders);
 		thisGame.beginOrderPhase();
 	};
 	
 	this.changePhase('battle', phaseChangeDone);
 };
 
-Game.prototype.moveUnits = function () {
-	var row,
+Game.prototype.performOrders = function (orders) {
+	var playerIdx,       // Iterator for the players.
+		playerOrders,    // Array of orders for a single player.
+		orderIdx, // Iterator for orders.
+		order,    // Shortcut.
+		row,
 		col;
 		
-	console.log ('Moving units');
+	console.log ('Performing orders:');
+	console.log (orders);
 		
+	// Overwrite local orders with server ones.
+	// TODO: Should really clear local orders first.
+	for (playerIdx in orders) {
+		playerOrders = orders[playerIdx];
+		
+		for (orderIdx in playerOrders) {
+			order = playerOrders[orderIdx];
+			
+			console.log ('Performing order:');
+			console.log (order);
+		
+			this.map.hexes[order.moveFrom.row][order.moveFrom.col].thingMoveTarget =
+				this.map.hexes[order.moveTo.row][order.moveTo.col];
+		}
+	}
+	
+	// Do the moves.
 	for (row in this.map.hexes) {
 		for (col in this.map.hexes[row]) {
 			console.log ('Moving units row=' + row + ' col=' + col);

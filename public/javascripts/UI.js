@@ -14,13 +14,13 @@ function UI(parentElementID) {
 	this.title = null;          // Current title.
 	this.timerState = null;     // 'running' or 'stopped'
 
-
 	this.goldElement = null;
 	this.gamePhaseElement = null;
 	this.gamePhaseTimeElement = null;
 	this.thingPickerElement = null;
 	this.titleElement = null;
 	this.doneButtonElement = null; // Button to end phase.
+	this.noticeElement = null; // For displaying notices.
 
 	/* thingsInPicker is an array of thingInPicker objects that have:
 	 * 'element'  - The DOM element.
@@ -60,8 +60,7 @@ function UI(parentElementID) {
 	this.doneButtonElement.click (function doneButtonClicked () {
 			thisUI.dispatch('doneButtonClicked');
 		});
-
-}
+};
 
 UI.prototype.changeGold = function (newGold) {
 	console.log ('Upating gold to ' + newGold);
@@ -231,13 +230,13 @@ UI.prototype.thingSelected = function () {
 };
 
 // Overlay a big title in the middle of the screen.
-UI.prototype.changeTitle = function (title) {
+UI.prototype.changeTitle = function (newTitle) {
 	if (this.titleElement === null) {
 		$(this.parentElement).append ('<div class="UI" id="UI-title"></div>');
 		this.titleElement = $('#UI-title');
 	}
 	
-	this.titleElement.html(title);
+	this.titleElement.html(newTitle);
 };
 
 UI.prototype.removeTitle = function () {
@@ -253,4 +252,19 @@ UI.prototype.showDoneButton = function () {
 UI.prototype.hideDoneButton = function () {
 	this.doneButtonElement.hide();
 	this.doneButtonElement.removeClass('button-flash');
+};
+
+UI.prototype.changeNotice = function (newNotice) {
+	if (this.noticeElement === null) {
+		$(this.parentElement).append ('<div class="UI" id="UI-notice"></div>');
+		this.noticeElement = $('#UI-notice');
+	}
+	
+	this.noticeElement.html(newNotice);
+	$(this.noticeElement).show();
+};
+
+UI.prototype.resetNotice = function () {
+	$(this.noticeElement).hide();
+	$(this.noticeElement).html('');
 };
