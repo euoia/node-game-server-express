@@ -3,11 +3,11 @@ var Config = require('../Config'),
 	GameServer = require('../GameServer'),
 	Step = require('step'),
 	winston = require('winston'),
-	Uuid = require('node-uuid');
+	uuid = require('node-uuid');
 	
 
 var config = null,
-	gameServers = null; // array of current servers.
+	gameServer = null; // The current game server. TODO: Use an array.
 	
 	
 renderLoginForm = function (req, res, errorMessage) {

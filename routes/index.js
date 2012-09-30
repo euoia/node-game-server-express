@@ -11,7 +11,10 @@ exports.index = function(req, res){
 };
 
 exports.login_form = function(req, res){
-    res.render('login_form', { title: 'Chat Login' });
+    res.render('login_form', {
+		title: 'Chat Login',
+		action: '/login'
+	});
 };
 
 // Log the user in.
@@ -39,7 +42,7 @@ exports.login = function (req, res) {
             if (err) { throw(err); }
 
             if (account === null) {
-                return res.json({
+                return res.render('error', {
                     title: 'Error!',
                     message: 'user not found.'
                 });
@@ -82,7 +85,7 @@ exports.login = function (req, res) {
             room_users = users;
 
             req.session.username = this_account.username;
-            return res.json({
+            return res.render('chat', {
                 // Account
                 title: 'Logged in',
                 username: this_account.username,
@@ -103,7 +106,7 @@ exports.chat_send = function (req, res) {
 
     if (req.session.username === undefined) {
         console.log('chat_send called without a valid session!');
-        res.json({error: "Invalid session."});
+        res.send({error: "Invalid session."}, 200);
         return;
     }
 
@@ -150,10 +153,10 @@ exports.chat_send = function (req, res) {
             this();
         },
         function sendResponse() {
-            return res.json({
+            return res.send({
                 status: 1,
                 events: thisEvents
-            });
+            }, 200);
         }
     );
 };
@@ -197,16 +200,16 @@ exports.chat_get_unread_events = function (req, res) {
             if (err) {
                 req.session.destroy();
 
-                return res.json({
+                return res.send({
                     status: 0,
                     error: err.message
-                });
+                }, 200);
             }
 
-            return res.json({
+            return res.send({
                 status: 1,
                 events: thisEvents
-            });
+            }, 200);
         }
     );
 };

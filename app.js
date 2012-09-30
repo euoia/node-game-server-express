@@ -16,6 +16,9 @@ var app = module.exports = express.createServer();
 app.configure(function(){
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
+	
+	app.register('.html', require('jade'));
+		
 
     app.use(express.cookieParser());
     app.use(express.session({ secret: "secret santa" }));
@@ -47,8 +50,16 @@ app.post('/chat/getUnreadEvents', routes.chat_get_unread_events); // TODO: Move 
 app.post('/chat/pollEvents', routes.chat_poll_events); // TODO: Move this to its own route file somehow
 
 // Game
+app.get('/game/login', gameRoutes.goLogin);
+app.post('/game/doLogin', gameRoutes.doLogin);
+app.get('/game/play', gameRoutes.playGame);
+
 app.post('/game/init', gameRoutes.init);
 app.post('/game/getConfig', gameRoutes.getConfig);
+app.post('/game/start', gameRoutes.start);
+app.post('/game/waitStart', gameRoutes.waitStart);
+app.post('/game/doPlacements', gameRoutes.doPlacements);
+app.post('/game/doOrders', gameRoutes.doOrders);
 
 // ---------
 // Database

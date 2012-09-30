@@ -1,16 +1,29 @@
+<!DOCTYPE html>
+
 <html>
 
 <head>
 <title>Testing some hexes</title>
+
+	<!-- prevent scrolling in iOS -->
+	<meta name="viewport" content="width=device-width; initial-scale=0.40; maximum-scale=0.40; user-scalable=no;"/>
+	<meta name="apple-mobile-web-app-capable" content="yes"/>
+
 	<!-- Google webfont -->
 	<link href='http://fonts.googleapis.com/css?family=Revalia' rel='stylesheet' type='text/css'>
 
 
 	<style type="text/css">
 		body {
-			-moz-user-select: -moz-none;
 			background-color: #112211;
 			zoom: 50%;
+		}
+
+		#stage {
+			position: absolute;
+			top: 20px
+			left: 20px;
+			width: 100%;
 		}
 
 		.hex {
@@ -50,17 +63,17 @@
 		}
 
 		#UI-gold {
-			left: 1700;
+			left: 1700px;
 			top: 100px;
 		}
 
 		#UI-gamePhase {
-			left: 1700;
+			left: 1700px;
 			top: 200px;
 		}
 
 		#UI-gamePhaseTime {
-			left: 1700;
+			left: 1700px;
 			top: 150px;
 		}
 
@@ -108,10 +121,10 @@
 		}
 
 		@-webkit-keyframes button-flash {
-			from { 
+			0% { 
 				-webkit-filter: brightness(0%);  
 			}
-			to   {
+			100%   {
 				-webkit-filter: brightness(10%);  
 			}
 		}
@@ -153,13 +166,13 @@
 		}
 
 		@-webkit-keyframes fade-out {
-			from { 
+			0% { 
 				opacity: 0;
 			}
 			15% {
 				opacity: 1;
 			}
-			to   {
+			100%   {
 			   	opacity: 0;
 			}
 		}
@@ -171,17 +184,48 @@
 
 		.placementArea {
 			-webkit-filter: brightness(20%);  
+			box-shadow: 0 0 20 20 blue;
 		}
+
+		.arrow {
+			position: absolute;
+			background-image: url('/images/arrow.png');
+			background-size: 100%;
+			background-repeat: no-repeat;
+			width: 100px;
+			height: 100px;
+		}
+		
+		@-webkit-keyframes target-attack {
+			0% { 
+				-webkit-filter: brightness(70%);  
+			}
+			100%   {
+				-webkit-filter: brightness(30%);  
+			}
+		}
+		
+		.hex.target-attack {
+			-webkit-animation: target-attack 0.5s ease infinite alternate;
+		}
+		
+		.hex.target-move {
+			-webkit-filter: brightness(50%);  
+		}
+
 
 	</style>
 
-	<script type="text/javascript" src="javascripts/jquery-1.7.1.min.js"></script>
-	<script type="text/javascript" src="javascripts/Events.js"></script>
-	<script type="text/javascript" src="javascripts/Map.js"></script>
-	<script type="text/javascript" src="javascripts/Game.js"></script>
-	<script type="text/javascript" src="javascripts/Player.js"></script>
-	<script type="text/javascript" src="javascripts/UI.js"></script>
-	<script type="text/javascript" src="javascripts/Net.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery-1.7.1.min.js"></script>
+	<script type="text/javascript" src="/javascripts/json2.js"></script>
+	
+	<script type="text/javascript" src="/javascripts/Browser.js"></script>
+	<script type="text/javascript" src="/javascripts/Events.js"></script>
+	<script type="text/javascript" src="/javascripts/Map.js"></script>
+	<script type="text/javascript" src="/javascripts/Game.js"></script>
+	<script type="text/javascript" src="/javascripts/Player.js"></script>
+	<script type="text/javascript" src="/javascripts/UI.js"></script>
+	<script type="text/javascript" src="/javascripts/Net.js"></script>
 	<script type="text/javascript">
 		var game; // Global game object.
 

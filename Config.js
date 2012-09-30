@@ -5,8 +5,8 @@ function Config() {
     this.map_cols      = 19;
 	
 	// Dev settings
-    this.map_rows      = 8;
-    this.map_cols      = 14;
+    //this.map_rows      = 8;
+    //this.map_cols      = 8;
 
     // thing (unit/building) config
     this.things = {
@@ -62,13 +62,13 @@ function Config() {
     this.phases = {
         'placement' : {
 			'title' : 'placement',
-			'time' : 60,
+			'time' : 560,
 			'canPlaceThings' : true,
 			'canMoveThings' : false
 		},
         'order' : {
 			'title' : 'order',
-			'time' : 30,
+			'time' : 590,
 			'canPlaceThings' : false,
 			'canMoveThings' : true
 		},

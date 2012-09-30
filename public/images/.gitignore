@@ -1,3 +1,7 @@
 # Do not commit the hexes #
 ###########################
-hex-*
+# hex-*
+
+# Do not commit anything in here #
+##################################
+*

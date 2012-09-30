@@ -1,3 +1,5 @@
+"use strict";
+
 function Game() {
 
 	this.stage_element_id  = null;       // ID of the stage element.
@@ -210,7 +212,7 @@ Game.prototype.hexTouchStart = function ( eventObj ) {
 		xDiff,
 		yDiff,
 		angle,
-		hexNeigh;
+		hexTarget;
 	
 	console.log ('hexTouchStart');
 	console.log (eventObj);
@@ -240,26 +242,48 @@ Game.prototype.hexTouchStart = function ( eventObj ) {
 		angle = angle + 180; // 0 to 360; easier to reason about.
 		
 		// Get the neighbour at that angle.
-		hexNeighb = thisGame.map.getHexNeighbour(
+		hexTarget = thisGame.map.getHexNeighbour(
 			eventObj.hex,
 			thisGame.map.angleToNeighbName(angle));
 			
-		if (hexNeighb.thing !== null) {
-			console.log ('Something already there.');
-		} else if (hexNeighb !== null) { 
-			if (eventObj.hex.thingMoveTarget !== null) {
-				eventObj.hex.thingMoveTarget.element.removeClass('selected');
-			}
-			eventObj.hex.thingMoveTarget = hexNeighb;
-			eventObj.hex.thingMoveTarget.element.addClass('selected');
-			console.log('Updating thingMoveTarget');
-			console.log(eventObj.hex);
+		// If the target has changed remove 'targetting' classes from the previously targetted hex.
+		if (eventObj.hex.thingMoveTarget !== null &&
+			eventObj.hex.thingMoveTarget !== hexTarget) {
+			eventObj.hex.thingMoveTarget.element.removeClass('target-move');
+			eventObj.hex.thingMoveTarget.element.removeClass('target-attack');
 		}
+		
+		if (hexTarget === null) {
+			// The would-be target is inaccessible.
+			return null;
+		}
+			
+		if (hexTarget.thing === null) {
+			// Target hex is empty.
+			hexTarget.element.addClass('target-move');
+		} else {
+			// Target hex is non-empty.
+			console.log ('Something already there.');
+			
+			if (hexTarget.thingPlayerNum !== thisGame.player_num) {
+				// Target hex contains an enemy thing.
+				console.error('adding target-attack');
+				hexTarget.element.addClass('target-attack');
+			}
+		}
+		
+		console.log('Updating thingMoveTarget');
+		console.log(eventObj.hex);
+		eventObj.hex.thingMoveTarget = hexTarget;
+		return null;
 	});
 	
 	$(document).bind(this.browser.touchEnd, function mouseUp () {
 		console.log ('mouse up');
 		eventObj.hex.element.removeClass('selected');
+		eventObj.hex.thingMoveTarget.element.removeClass('target-move');
+		eventObj.hex.thingMoveTarget.element.removeClass('target-attack');
+		
 		$(document).unbind(thisGame.browser.touchMove);
 		$(document).unbind(thisGame.browser.touchEnd);
 		
@@ -273,7 +297,7 @@ Game.prototype.hexTouchStart = function ( eventObj ) {
 
 Game.prototype.hexClicked = function ( eventObj ) {
 	var thisGame = this,
-		selectThing,           // Thing currently selected by this player.
+		selectedThing,           // Thing currently selected by this player.
 		playerPlacementAreas;  // The player's placement area.
 
 	console.log('hexClicked');
@@ -474,7 +498,7 @@ Game.prototype.beginBattlePhase = function (doOrdersResponse) {
 	this.ui.resetNotice ();
 	
 	phaseChangeDone = function () {
-		this.map.clearArrows();
+		thisGame.map.clearArrows();
 		thisGame.performOrders(doOrdersResponse.orders);
 		thisGame.beginOrderPhase();
 	};

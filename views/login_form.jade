@@ -1,5 +1,7 @@
 h1= title
-form(action='login', method='post')
+form(action= action, method='post')
+    if locals.errorMessage
+      #errorMessage= errorMessage
     #username Username
     input(name='username', type='text')
     submit

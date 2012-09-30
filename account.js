@@ -55,6 +55,16 @@ exports.init = function (args) {
 
         console.log('saved account.');
     });
+	
+    new Account({
+        username: 'gboucher',
+        real_name: 'Guillaume Boucher',
+        email: 'guillaume.boucher@xxxxxx.com'
+    }).save(function(err) {
+        if (err) { throw err; }
+
+        console.log('saved account.');
+    });
 
     console.log('finished initializing account');
 };
