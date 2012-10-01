@@ -2,38 +2,8 @@ var mongoose = require('mongoose'),
     Schema   = mongoose.Schema,
     step     = require('step'),
     sanitize = require('validator').sanitize;
+	
 
-// Log the user in.
-exports.login = function (req, cb) {
-    var Account = mongoose.model('Account');
-
-    step (
-        function findAccount() {
-            Account.findOne(
-                {username: req.param('username')},
-                this);
-        },
-        function findAccountDone(err, account) {
-			var response;
-			
-            if (err) { throw(err); }
-
-            if (account === null) {
-				response = {
-					'status' : 'error',
-					'message' : 'User not found.'
-				};
-			} else {
-				req.session.username = account.username;
-				response = {
-					'status' : 'success'
-				};
-			}
-
-			cb(response);
-        }
-    );
-};
 
 // This is an ajax request that is expecting a JSON response.
 exports.chat_send = function (req, res) {

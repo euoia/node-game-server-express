@@ -1,3 +1,9 @@
+- var flashTypes = ['info', 'error']
+each flashType in flashTypes
+  if locals.flash
+    p.flash(class="text-"+flashType)
+      = flash[flashType]
+
 h1= title
 form(action= action, method='post')
     if locals.errorMessage

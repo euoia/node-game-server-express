@@ -1,3 +1,5 @@
+// No longer used -> replaced by login.js.
+// 
 var mongoose = require('mongoose'),
     Schema   = mongoose.Schema,
     step     = require('step'),
@@ -10,7 +12,7 @@ exports.index = function(req, res){
   res.render('index', { title: 'Express' });
 };
 
-exports.login_form = function(req, res){
+exports.show_form = function(req, res){
     res.render('login_form', {
 		title: 'Chat Login',
 		action: '/login'

@@ -1,0 +1,14 @@
+html,body{height:600px;width:100%;position:absolute;color:#ddddff;background:#111111;padding:20px;font:14px "Lucida Grande",Helvetica,Arial,sans-serif;}
+.container{height:inherit;}
+.row-fluid{height:inherit;}
+.user-list{background-color:#aaa;height:inherit;}
+.game-list{background-color:#aaa;height:inherit;}
+.account-details{font:14px "Lucida Grande",Helvetica,Arial,sans-serif;color:#333333;}
+.chat-box{background-color:#ccc;height:inherit;}
+.chat-box>.messages{padding:0px;background:#222;width:100%;height:inherit;overflow:auto;}
+.chat-box>.header{color:white;font:18px "Lucida Grande";}
+.room-name{font-family:"Courier New";}
+.chat-box ul{list-style:none;margin:0;padding:0;padding-left:10px;}
+.chat-box .username{font-weight:bold;color:orange;}
+.chat-box input{width:100%;border:3px solid #aaaaaa;background-color:#ddddff;padding:0;margin:0px;}
+#errorMessage{color:red;}

@@ -4,14 +4,13 @@ var Config = require('../Config'),
 	Step = require('step'),
 	winston = require('winston'),
 	uuid = require('node-uuid');
-	
 
 var config = null,
 	gameServer = null; // The current game server. TODO: Use an array.
 	
 	
 renderLoginForm = function (req, res, errorMessage) {
-    res.render('login_form', {
+	res.render('login_form', {
 		title: 'Game Login',
 		action: '/game/doLogin',
 		errorMessage: req.session.error
@@ -63,7 +62,7 @@ exports.doLogin = function(req, res){
 exports.playGame = function (req, res) {
 	var lp; // Log prefix.
 	
-	lp = '[' + req.param('username') + '] game:playGame:';
+	lp = '[' + req.param.username + '] game:playGame:';
 	winston.info (lp, 'called.');
 	
 	Step (
@@ -270,7 +269,7 @@ exports.doOrders = function (req, res) {
 
 	// First respond to the waiting player.
 	gameServer.waitingToPlace.response.json ({
-	   	status : 'success',
+		status : 'success',
 		orders : gameServer.orders
 	});
 	gameServer.waitingToPlace = null;

@@ -1,12 +1,14 @@
-p.account-details Logged in as #{username} (#{real_name})
+#content-head
+.header
+  span.room-name Welcome to the lobby. Please chat and find a game.
+  p.account-details Logged in as #{username} (#{real_name})
 
-div.chat-window(id='chat-#{room_name}')
-  div.header room 
-    span.room-name #{room_name}
-  div.user-list
-  div.message-box
+#content-body
+  .message-box
     ul
-  div.input
+
+#content-foot
+  .input
     form(id='form-#{room_name}')
       input.entry(name='message')
       submit

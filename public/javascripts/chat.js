@@ -39,6 +39,11 @@ Chat.prototype.processEvents = function (events) {
     var i,
         message;
 
+	if (events === undefined) {
+		console.log('processEvents: 0 events to process.');
+		return;
+	}
+	
     console.log('processEvents: ' + events.length + ' events to process.');
 
     for (i = 0; i < events.length; i += 1) {
