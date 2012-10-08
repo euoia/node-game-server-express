@@ -13,11 +13,12 @@ var app = module.exports = express.createServer();
 // Configuration
 app.configure(function(){
 	app.use(lessMiddleware({
-		src: __dirname + '../public',
+		src: __dirname + '/../public',
 		compress: true
 	}));
-
+	
 	app.use(express.static(__dirname + '/../public'));
+
 	
 	app.use(flash());
 	
@@ -27,7 +28,7 @@ app.configure(function(){
 	app.register('.html', require('jade'));
 
 	app.use(express.cookieParser());
-	app.use(express.session({ secret: "secret santa" }));
+	app.use(express.session({ secret: "asdalskdjalsdj8u819238u" }));
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
 	app.use(app.router);

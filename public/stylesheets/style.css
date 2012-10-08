@@ -9,11 +9,6 @@ a {
     color: #00B7FF;
 }
 
-.account-details {
-    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
-    color: #333333;
-}
-
 .chat-window {
     width: 1000px;
     height: 500px;
@@ -26,8 +21,6 @@ a {
     height: 90%;
     overflow: auto;
 }
-
-
 
 .chat-window > .header {
     color: white;

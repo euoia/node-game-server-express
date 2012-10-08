@@ -54,6 +54,8 @@ exports.goLobby = function(req, res){
 		},
 		function joinRoomDone(r) {
 			var account;
+			
+			console.log(r);
 
 			if (r.status == 'ALREADY_PRESENT') {
 				console.log ('User was apparently already in the room - '
