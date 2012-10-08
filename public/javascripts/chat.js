@@ -169,6 +169,5 @@ Chat.prototype.longPoll = function (this_chat) {
 Chat.prototype.scrollDown = function () {
 	console.log('scrolldown');
 	//used to keep the most recent messages visible
-   $('#chat-' + this.room_name + ' input.entry').focus();
-   $('#chat-' + this.room_name + ' .chat-box').animate({scrollTop: 9999}, 400);
+   $('#content-body').animate({scrollTop: 9999}, 400);
 }

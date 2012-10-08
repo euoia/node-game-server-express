@@ -35,20 +35,13 @@ exports.send = function (req, res) {
 			}, 200);
 			
 			/* Any clients that are waiting on the long poll should check agamessage. */
-			console.log('There are ' + waiting.length + ' clients waiting.');
-
+			console.log(lp + 'There are ' + waiting.length + ' clients waiting.');
+			
 			while (waiting.length > 0) {
 				waiting_user = waiting.pop();
+				console.log (lp + 'Processing waiting user: ' + waiting_user.username);
 				
-				step (
-					function getUnreadEvents() {
-						ChatRoom.getUnreadEvents(waiting_user.room_name, waiting_user.username, this);
-					},
-					function getUnreadEventsDone(unreadEventsResponse) {
-						console.log ('Sending ' + unreadEventsResponse.events.length + ' events to waiting user ' + waiting_user.username);
-						waiting_user['callback']({status: 'success', events: unreadEventsResponse.events}); //TODO: would be better in parallel?
-					}
-				);
+				ChatRoom.getUnreadEvents(waiting_user.room_name, waiting_user.username, waiting_user.callback);
 			}
 		}
 	);
@@ -87,12 +80,12 @@ exports.getUnreadEvents = function (req, res) {
 			});
 		},
 		function sendResponse(r) {
+			console.log (lp + 'Sending response to client.')
+			console.dir (r);
+			
 			if (r.status === 'error') {
 				return res.send(r.message, 200);
 			}
-			
-			console.log (lp + 'Sending response to client.')
-			console.dir (r);
 			
 			return res.send({
 				status: 1,

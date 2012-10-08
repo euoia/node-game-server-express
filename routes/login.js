@@ -11,8 +11,16 @@ exports.index = function(req, res){
 };
 
 exports.goLogin = function(req, res){
-	var lp = '[' + req.session.username + '] login::goLogin: ';
+	var lp = '[' + req.session.username + '] login::goLogin: ',
+		sessionError;
+		
 	console.log(lp + 'Rendering login form.');
+	
+	sessionError = Session.check(req); 
+	if (sessionError === null) {
+		// May already be logged in.
+		return res.redirect(req.app.settings.successfulLoginRedirect);
+	}
 	
 	res.render('login_form', {
 		title: 'Login',
@@ -22,10 +30,7 @@ exports.goLogin = function(req, res){
 
 // Log the user in.
 exports.doLogin = function(req, res) {
-	var lp, // Log prefix.
-		sessionError;
-		
-	lp = '[' + req.session.username + '] login::doLogin: ';
+	var lp = '[' + req.session.username + '] login::doLogin: ';
 	console.log (lp + 'Attempting to login.');
 	
 	Step (
@@ -70,7 +75,7 @@ exports.goLobby = function(req, res){
 	Step (
 		function joinRoom() {
 			// Player should have a session now.
-			console.log(lp + ' Joining room ' + req.app.settings.defaultRoom);
+			console.log(lp + 'Joining room ' + req.app.settings.defaultRoom);
 			Lobby.join(req.app.settings.defaultRoom, req.session.username, this);
 		},
 		function joinRoomDone(r) {
