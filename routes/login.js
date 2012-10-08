@@ -3,10 +3,21 @@ var mongoose = require('mongoose'),
 	Step	 = require('step'),
 	Lobby    = require('../Lobby'),
 	Account  = require('../models/Account');
+	
+checkSessionError = function (req) {
+	if (req.session.username === undefined) {
+		return ({
+			'status': 'error',
+			'message': 'Invalid session.'
+		});
+	}
+	
+	return null;
+};
 
 exports.index = function(req, res){
 	// This is the boring old default index
-  res.render('index', { title: 'Express' });
+	res.render('index', { title: 'Express' });
 };
 
 exports.goLogin = function(req, res){
@@ -18,7 +29,11 @@ exports.goLogin = function(req, res){
 
 // Log the user in.
 exports.doLogin = function(req, res) {
-	console.log ('Attempting to login with username ' + req.param('username'));
+	var lp, // Log prefix.
+		sessionError;
+		
+	lp = '[' + req.session.username + '] login::doLogin: ';
+	console.log (lp + 'Attempting to login.');
 	
 	Step (
 		function getAccount() {
@@ -42,9 +57,20 @@ exports.doLogin = function(req, res) {
 	);
 };
 
-// TODO, check session. Do it using an array of routes.
+// TODO, check session using an array of routes.
 exports.goLobby = function(req, res){
-	var users;
+	var users,
+	    lp, // Log prefix.
+		sessionError;
+		
+	lp = '[' + req.session.username + '] login::goLobby: ';
+	console.log (lp + 'Joining lobby.');
+	
+	sessionError = this.checkSessionError(req); 
+	if (sessionError) {
+		req.flash(sessionError.status, sessionError.message);
+		return res.redirect(req.app.settings.failedLoginRedirect);
+	}
 	
 	Step (
 		function joinRoom() {

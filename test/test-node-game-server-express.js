@@ -29,14 +29,28 @@ describe('request', function() {
 			});
 		});
 		
-		it('should gain a session on POST', function(done) {
-			agent2
+		it('login with a valid username, should get redirected to lobby', function(done) {
+			agent1
 			.post('http://localhost:3000/login')
 			.send({ username: 'jpickard' })
 			.end(function(err, res) {
 				should.not.exist(err);
-				res.should.have.status(200);
+				res.should.have.status(200); // After redirect will be 200.
+				res.text.should.include('Logged in as jpickard');
 				should.exist(res.headers['set-cookie']);
+				done();
+			});
+		});
+		
+		it('login with an invalid username, should get redirected', function(done) {
+			agent2
+			.post('http://localhost:3000/login')
+			.send({ username: 'nonsense' })
+			.end(function(err, res) {
+				should.not.exist(err);
+				res.should.have.status(200); // After redirect will be 200
+				should.exist(res.headers['set-cookie']);
+				res.text.should.include('Account not found');
 				done();
 			});
 		});
