@@ -1,5 +1,4 @@
 var Config = require('../Config'),
-	Users = require('../Users'),
 	GameServer = require('../GameServer'),
 	Step = require('step'),
 	winston = require('winston'),
@@ -8,57 +7,8 @@ var Config = require('../Config'),
 var config = null,
 	gameServer = null; // The current game server. TODO: Use an array.
 	
-	
-renderLoginForm = function (req, res, errorMessage) {
-	res.render('login_form', {
-		title: 'Game Login',
-		action: '/game/doLogin',
-		errorMessage: req.session.error
-	});
-};
-
-checkSessionError = function (req) {
-	if (req.session.username === undefined) {
-		return ({
-			'status': 'error',
-			'message': 'Invalid session.'
-		});
-	}
-	
-	return null;
-};
-
 // Exports
 //////////////////////////////////
-
-exports.goLogin = function(req, res){
-	this.renderLoginForm(req, res);
-	
-	if (req.session.error !== undefined) {
-		// Only show an error once.
-		delete req.session.error;
-	}
-};
-
-exports.doLogin = function(req, res){
-	var thisGameRoute = this;
-	
-	Step (
-		function login() {
-			Users.login (req, this);
-		},
-		function loginResponse(response) {
-			if (response.status === 'error') {
-				req.session.error = response.message;
-				res.redirect('/game/login');
-				return;
-			}
-			
-			res.redirect('/hexes.html');
-		}
-	);
-};
-
 exports.playGame = function (req, res) {
 	var lp; // Log prefix.
 	

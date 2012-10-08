@@ -2,18 +2,8 @@ var mongoose = require('mongoose'),
 	Schema	 = mongoose.Schema,
 	Step	 = require('step'),
 	Lobby    = require('../Lobby'),
-	Account  = require('../models/Account');
-	
-checkSessionError = function (req) {
-	if (req.session.username === undefined) {
-		return ({
-			'status': 'error',
-			'message': 'Invalid session.'
-		});
-	}
-	
-	return null;
-};
+	Account  = require('../models/Account'),
+	Session  = require('../Session');
 
 exports.index = function(req, res){
 	// This is the boring old default index
@@ -21,6 +11,9 @@ exports.index = function(req, res){
 };
 
 exports.goLogin = function(req, res){
+	var lp = '[' + req.session.username + '] login::goLogin: ';
+	console.log(lp + 'Rendering login form.');
+	
 	res.render('login_form', {
 		title: 'Login',
 		action: '/login'
@@ -45,13 +38,14 @@ exports.doLogin = function(req, res) {
 				return res.send(500, 'Something broke!');
 			}
 			  
-			console.dir(r);
 			if (r.status === 'error') {
 				req.flash('error', r.message);
 				return res.redirect(req.app.settings.failedLoginRedirect);
 			}
 			
+			console.log (lp + 'Login successful with ' + req.param('username'));
 			req.session.username = req.param('username');
+			req.session.logged_in = true;
 			return res.redirect(req.app.settings.successfulLoginRedirect);
 		}
 	);
@@ -66,8 +60,9 @@ exports.goLobby = function(req, res){
 	lp = '[' + req.session.username + '] login::goLobby: ';
 	console.log (lp + 'Joining lobby.');
 	
-	sessionError = this.checkSessionError(req); 
+	sessionError = Session.check(req); 
 	if (sessionError) {
+		console.log(lp + 'Session error');
 		req.flash(sessionError.status, sessionError.message);
 		return res.redirect(req.app.settings.failedLoginRedirect);
 	}
@@ -75,33 +70,29 @@ exports.goLobby = function(req, res){
 	Step (
 		function joinRoom() {
 			// Player should have a session now.
-			console.log('Player ' + req.session.username + ' is joining room ' + req.app.settings.defaultRoom + '.');
+			console.log(lp + ' Joining room ' + req.app.settings.defaultRoom);
 			Lobby.join(req.app.settings.defaultRoom, req.session.username, this);
 		},
 		function joinRoomDone(r) {
-			var account;
-			
-			console.log(r);
+			if (r.status === 'error') {
+				req.flash('error', r.message);
+				req.flash('info', r.code);
+				return res.redirect(req.app.settings.failedLoginRedirect);
+			}
+				
 
-			if (r.status == 'ALREADY_PRESENT') {
-				console.log ('User was apparently already in the room - '
-					+ 'searching whether the user was waiting and deleting the connection.');
-				/* Remove user from waiting list. */
-				/* Could use array filter but I want to log it. */
-				for (i=0; i < waiting.length; i += 1) {
-					if (waiting[i].username == this_account.username) {
-						console.log ('User ' + waiting[i].username + ' was already in room - removing');
-						waiting[i].callback({'message': 'You have connected from elsewhere.'});
-						waiting.splice(i, 1);
-						i -= 1;
-					}
-				}
+			if (r.code == 'ALREADY_PRESENT') {
+				console.log (lp + 'User was already in the room.');
 			}
 			
 			users = r.users;
 			Account.getByUsername(req.session.username, this);
 		},
 		function foundAccount(err, r) {
+			if (err) {
+				throw (err);
+			}
+			
 			return res.render('chat', {
 				// Account
 				title: 'Logged in',

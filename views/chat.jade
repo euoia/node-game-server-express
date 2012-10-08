@@ -4,8 +4,9 @@
   p.account-details Logged in as #{username} (#{real_name})
 
 #content-body
-  .message-box
-    ul
+  div(id='chat-#{room_name}')
+    .chat-box
+      ul
 
 #content-foot
   .input

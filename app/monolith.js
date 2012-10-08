@@ -6,7 +6,8 @@ var express = require('express'),
 	Lobby = require('../Lobby'),
 	loginRoutes = require('../routes/login'),
 	chatRoutes = require('../routes/chat'),
-	gameRoutes = require('../routes/game');
+	gameRoutes = require('../routes/game'),
+	RedisStore = require('connect-redis')(express);
 
 var app = module.exports = express.createServer();
 
@@ -27,7 +28,10 @@ app.configure(function(){
 	app.register('.html', require('jade'));
 
 	app.use(express.cookieParser());
-	app.use(express.session({ secret: "asdalskdjalsdj8u819238u" }));
+	app.use(express.session({
+		secret: "asdalskdjalsdj8u819238u",
+		store: new RedisStore
+	}));
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
 	app.use(app.router);
@@ -62,9 +66,9 @@ app.post('/login', loginRoutes.doLogin)
 app.get('/lobby/go', loginRoutes.goLobby);
 
 // Chat (AJAX)
-app.post('/chat/send', chatRoutes.chat_send);
-app.post('/chat/getUnreadEvents', chatRoutes.chat_get_unread_events);
-app.post('/chat/pollEvents', chatRoutes.chat_poll_events);
+app.post('/chat/send', chatRoutes.send);
+app.post('/chat/getUnreadEvents', chatRoutes.getUnreadEvents);
+app.post('/chat/pollEvents', chatRoutes.pollEvents);
 
 // Game
 app.get('/game/login', gameRoutes.goLogin);
@@ -85,7 +89,8 @@ helpers(app);
 // ---------
 // Database
 var db = mongoose.connect('mongodb://localhost/test');
+
 Lobby.init( {rebuild: true, rooms: [app.settings.defaultRoom]}, function (err) {
 	console.error ('A fatal error occurred whilst initializing the lobby.');
-	throw(err);
+	console.error(err.stack);
 });

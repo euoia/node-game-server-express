@@ -5,10 +5,21 @@ function Chat() {
 	$('#message-entry').focus();
 }
 
+Chat.prototype.formatNumberLength = function(num, length) {
+    var r = "" + num;
+    while (r.length < length) {
+        r = "0" + r;
+    }
+    return r;
+}
+
+
 Chat.prototype.formatDate = function (dateStr) {
 	var d = new Date(dateStr);
 
-	return d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+	return this.formatNumberLength(d.getHours(), 2) +
+		":" + this.formatNumberLength(d.getMinutes(), 2) +
+		":" + this.formatNumberLength(d.getSeconds(), 2);
 }
 
 Chat.prototype.attach = function(room_name) {
@@ -67,14 +78,14 @@ Chat.prototype.processEvents = function (events) {
 };
 
 Chat.prototype.addError = function (errorMessage) {
-	$('#chat-' + this.room_name + ' .message-box ul').append(
+	$('#chat-' + this.room_name + ' .chat-box ul').append(
 		"<li class='error-message'>" + errorMessage + "</li>");
 
 	this.scrollDown();
 };
 
 Chat.prototype.addMessage = function (event) {
-	$('#chat-' + this.room_name + ' .message-box ul').append(
+	$('#chat-' + this.room_name + ' .chat-box ul').append(
 		"<li class='message'>" +
 			"<span class='timestamp'>[" + this.formatDate(event.created) + "] </span>" +
 			"<span class='username'>" + event.username + ": </span>" +
@@ -85,7 +96,7 @@ Chat.prototype.addMessage = function (event) {
 };
 
 Chat.prototype.addJoin = function (event) {
-	$('#chat-' + this.room_name + ' .message-box ul').append(
+	$('#chat-' + this.room_name + ' .chat-box ul').append(
 		"<li class='message'>" +
 			"<span class='timestamp'>[" + this.formatDate(event.created) + "] </span>" +
 			"<span class='username'>" + event.username + " joined </span>" +
@@ -115,9 +126,11 @@ Chat.prototype.send = function() {
 	this.clearMessage();
 }
 
-Chat.prototype.longPoll = function () {
+Chat.prototype.longPoll = function (this_chat) {
 	console.log ('longPoll...');
-	var this_chat = this;
+	if (this_chat === undefined) {
+		var this_chat = this;
+	}
 
 	//TODO update the document title to include unread message count if blurred
 	$.ajax({
@@ -132,6 +145,8 @@ Chat.prototype.longPoll = function () {
 			setTimeout(this_chat.longPoll, 10*1000);
 		},
 		success: function (data) {
+			console.log('Received data:');
+			console.log(data);
 
 			if (data.status === 0) {
 				// 0 indicates a fatal (do not reconnect) error.
@@ -141,7 +156,7 @@ Chat.prototype.longPoll = function () {
 
 			} else if (data.status == 1) {
 				// Upon success we want to long poll again immediately.
-				this_chat.longPoll();
+				this_chat.longPoll(this_chat);
 			}
 
 			if (data.events !== undefined) {
@@ -155,5 +170,5 @@ Chat.prototype.scrollDown = function () {
 	console.log('scrolldown');
 	//used to keep the most recent messages visible
    $('#chat-' + this.room_name + ' input.entry').focus();
-   $('#chat-' + this.room_name + ' .message-box').animate({scrollTop: 9999}, 400);
+   $('#chat-' + this.room_name + ' .chat-box').animate({scrollTop: 9999}, 400);
 }

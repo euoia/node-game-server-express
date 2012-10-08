@@ -8,6 +8,6 @@ html,body{color:#ddddff;background:#111111;padding:20px;font:14px "Lucida Grande
 #right-sidebar{top:0;width:200px;right:0;bottom:0;}
 #content{top:0;bottom:0;left:200px;right:200px;}
 #bottom{right:0;width:70%;bottom:0;left:0;}
-#content-head{top:0;left:0;right:0;height:30px;}
-#content-body{top:30px;bottom:30px;left:0;right:0;}
+#content-head{top:0;left:0;right:0;height:50px;}
+#content-body{top:50px;bottom:30px;left:0;right:0;}
 #content-foot{bottom:0;left:0;right:0;height:30px;}

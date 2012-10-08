@@ -22,6 +22,7 @@ var accountSchema = new mongoose.Schema({
 });
 
 accountSchema.statics.insertTestRecords = function () {
+	var lp = '<M:S> insertTestRecords';
     /* ---------------------------------------------*/
     /* Insert some starting data */
     /* ---------------------------------------------*/
@@ -33,7 +34,7 @@ accountSchema.statics.insertTestRecords = function () {
         email: 'james.pickard@gmail.com'
     }).save(function(err) {
         if (err) { throw err; }
-        console.log('saved account jpickard');
+        console.log(lp + 'Saved account jpickard');
     });
 
     new this ({
@@ -42,7 +43,7 @@ accountSchema.statics.insertTestRecords = function () {
         email: 'jack.small@gmail.com'
     }).save(function(err) {
         if (err) { throw err; }
-        console.log('saved account jsmall');
+        console.log(lp + 'Saved account jsmall');
     });
 	
     new this ({
@@ -51,10 +52,10 @@ accountSchema.statics.insertTestRecords = function () {
         email: 'guillaume.boucher@xxxxxx.com'
     }).save(function(err) {
         if (err) { throw err; }
-        console.log('saved account gboucher');
+        console.log(lp + 'Saved account gboucher');
     });
 
-    console.log('finished initializing account');
+    console.log(lp + 'Finished initializing account');
 };
 
 // Retrieve the user by username.
