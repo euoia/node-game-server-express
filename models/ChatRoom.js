@@ -34,21 +34,22 @@ chatRoomSchema.methods.sendMessage = function(username, message, cb) {
 //      * Something like this should work - how does one do this in mongoose?
 //        chatRoomSchema.ensureIndex({'events.username': 1}, {unique: true});
 chatRoomSchema.statics.getUsers = function(room_name, cb) {
-	var lp = '<M:S> ChatRoom::getUsers: '
+	var lp = '<M:S> ChatRoom::getUsers: ',
+		usernames = [];
+		
 	console.log(lp + 'Getting users for ' + room_name);
 
-	this.findOne({name: room_name}, function (err, room) {
+	ChatRoomUser.find({room_name: room_name}, function (err, users) {
 		if (err) {
 			console.log(err.stack);
 			return cb({status : 'error', code : 'DB_ERROR'});
 		}
 		
-		if (room === null) {
-			console.log(lp + 'Room not found ' + room);
-			return cb({status : 'error', code : 'NO_SUCH_ROOM'});
-		}
-
-		return cb({status: 'success', users: room.users});
+		users.forEach (function(u) {
+			usernames.push(u.username);
+		});
+		
+		return cb({status: 'success', users: usernames});
 	});
 };
 
@@ -241,14 +242,7 @@ chatRoomSchema.statics.join = function(room_name, username, cb) {
 				return cb({status : 'error', code : 'DB_ERROR'});
 			};
 			
-			thisChatRoom.getUsers(room_name, this);
-		},
-		function gotUsers (r) {
-			if (r.status === 'error') {
-				return cb(r);
-			};
-			
-			return cb({status: 'success', users: r.users});
+			return cb({status: 'success'});
 		}
 	);
 };

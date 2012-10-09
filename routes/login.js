@@ -91,7 +91,6 @@ exports.goLobby = function(req, res) {
 				req.flash('info', r.code);
 				return res.redirect(req.app.settings.failedLoginRedirect);
 			}
-				
 
 			if (r.code == 'ALREADY_PRESENT') {
 				console.log (lp + 'User was already in the room.');
@@ -105,6 +104,9 @@ exports.goLobby = function(req, res) {
 				throw (err);
 			}
 			
+			console.log(lp + 'rendering chat with users');
+			console.log(users);
+				
 			return res.render('chat', {
 				// Account
 				title: 'Logged in',

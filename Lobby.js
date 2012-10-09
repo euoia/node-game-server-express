@@ -77,9 +77,21 @@ exports.join = function (room_name, username, cb) {
 		function joinRoomDone(r) {
 			if (r.status === 'error') {
 				r.message = 'unhandled error';
+				return cb(r);
 			}
 			
-			return cb(r);
+			ChatRoom.getUsers(room_name, this);
+		},
+		function gotUsers (r) {
+			if (r.status === 'error') {
+				r.message = 'unhandled error';
+				return cb(r);
+			};
+			
+			console.log('users:');
+			console.log(r.users);
+			
+			return cb({status: 'success', users: r.users});
 		}
 	);
 }

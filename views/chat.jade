@@ -16,6 +16,7 @@
 script
   chat = new Chat();
   chat.attach('#{room_name}');
-
   chat.processEvents(!{events});
-  chat.initUsers(!{users});
+
+  userList = new UserList('#left-sidebar');
+  userList.initUsers(!{users});
