@@ -14,9 +14,11 @@
       submit
 
 script
-  chat = new Chat();
-  chat.attach('#{room_name}');
-  chat.processEvents(!{events});
+  cc = new ChatController();
+  cc.init();
 
-  userList = new UserList('#left-sidebar');
-  userList.initUsers(!{users});
+  cc.chat.attach('#{room_name}');
+  cc.chat.processEvents(!{events});
+
+  cc.userList = new UserList('#left-sidebar');
+  cc.userList.initUsers(!{users});

@@ -3,6 +3,9 @@ function Chat() {
 
 	// Focus the chat.
 	$('#message-entry').focus();
+	
+	// Event listener.
+	Event.init(this);
 }
 
 Chat.prototype.formatNumberLength = function(num, length) {
@@ -61,14 +64,15 @@ Chat.prototype.processEvents = function (events) {
 	console.log('processEvents: ' + events.length + ' events to process.');
 
 	for (i = 0; i < events.length; i += 1) {
-		message = events[i];
+		event = events[i];
 
-		switch (message.type) {
+		switch (event.type) {
 			case 'message':
-				this.addMessage(message);
+				this.addMessage(event);
 				break;
 			case 'join':
-				this.addJoin(message);
+				this.addJoin(event);
+				this.dispatch ('userJoined', {'username' : event.username});
 				break;
 			default:
 				console.error ('unknown message type: ' + message.type);
