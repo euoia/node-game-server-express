@@ -56,8 +56,15 @@ exports.doLogin = function(req, res) {
 	);
 };
 
+// Log the user out.
+exports.doLogout = function(req, res) {
+	var lp = '[' + req.session.username + '] login::doLogout: ';
+	req.session.destroy();
+	return res.redirect('/');
+};
+
 // TODO, check session using an array of routes.
-exports.goLobby = function(req, res){
+exports.goLobby = function(req, res) {
 	var users,
 	    lp, // Log prefix.
 		sessionError;
@@ -107,7 +114,7 @@ exports.goLobby = function(req, res){
 				// Chat
 				events: JSON.stringify([]),
 				room_name: req.app.settings.defaultRoom,
-				users: users
+				users: JSON.stringify(users)
 			});
 		}
 	);

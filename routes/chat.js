@@ -27,6 +27,8 @@ exports.send = function (req, res) {
 				return res.send({error: "Error sending event."}, 200);
 			}
 			
+			console.dir(r);
+			
 			// Send the response to the requestor.
 			console.log(lp + 'Sent a message: ' + r.event.message);
 
@@ -34,7 +36,7 @@ exports.send = function (req, res) {
 				status: 1
 			}, 200);
 			
-			/* Any clients that are waiting on the long poll should check agamessage. */
+			/* Any clients that are waiting on the long poll should get a message. */
 			console.log(lp + 'There are ' + waiting.length + ' clients waiting.');
 			
 			while (waiting.length > 0) {
@@ -80,11 +82,14 @@ exports.getUnreadEvents = function (req, res) {
 			});
 		},
 		function sendResponse(r) {
-			console.log (lp + 'Sending response to client.')
-			console.dir (r);
+			console.log (lp + 'Sending response to client:')
+			console.log(r);
 			
 			if (r.status === 'error') {
-				return res.send(r.message, 200);
+				return res.send({
+					status: 0,
+					message: r.message
+				}, 200);
 			}
 			
 			return res.send({

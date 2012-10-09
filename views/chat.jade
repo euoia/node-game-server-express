@@ -1,7 +1,6 @@
 #content-head
-.header
   span.room-name Welcome to the lobby. Please chat and find a game.
-  p.account-details Logged in as #{username} (#{real_name})
+  p.account-details Logged in as #{username} (#{real_name} <a href="/logout">logout</a>)
 
 #content-body
   div(id='chat-#{room_name}')
@@ -19,3 +18,4 @@ script
   chat.attach('#{room_name}');
 
   chat.processEvents(!{events});
+  chat.initUsers(!{users});

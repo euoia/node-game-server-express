@@ -42,6 +42,11 @@ chatRoomSchema.statics.getUsers = function(room_name, cb) {
 			console.log(err.stack);
 			return cb({status : 'error', code : 'DB_ERROR'});
 		}
+		
+		if (room === null) {
+			console.log(lp + 'Room not found ' + room);
+			return cb({status : 'error', code : 'NO_SUCH_ROOM'});
+		}
 
 		return cb({status: 'success', users: room.users});
 	});
@@ -113,34 +118,65 @@ chatRoomSchema.statics.getUnreadEvents = function(room_name, username, cb) {
 // Send a message to any room.
 chatRoomSchema.statics.sendMessage = function(room_name, username, message, cb) {
 	var lp = '<M:S> ChatRoom::sendMessage: ',
-		event;
+		event,
+		thisChatRoom = this;
 		
 	console.log(lp + 'room_name=' + room_name + ' username=' + username + ' message=' + message);
 
-	this.findOne({name: room_name}, function (err, room) {
-		if (err) {
-			console.log (lp + 'Error finding model.');
-			console.log(err.stack);
-			return cb({status : 'error', message: 'DB_ERROR'});
-		}
+	Step(
+		function findChatRoomUser() {
+			console.log(lp + 'findChatRoomUser');
 			
-		event = new ChatRoomEvent ({
-			room_name: room_name,
-			type: 'message',
-			username: username,
-			message: message
-		});
+			// Allow messages from admin to any room without being in user list.
+			// TODO : Put this in config.
+			if (username !== 'admin') {
+				ChatRoomUser.findOne({room_name: room_name, username: username}, this);
+			} else {
+				return {};
+			}
+		},
+		function findRoomUserDone(err, chatRoomUser) {
+			console.log(lp + 'foundRoomUser');
+			if (err) {
+				console.log(err.stack);
+				return cb({status : 'error', code : 'DB_ERROR'});
+			}
+			
+			if (chatRoomUser === null) {
+				console.log('User not in room');
+				return cb({status : 'error', code : 'USER_NOT_IN_ROOM'});
+			}
+			
+			thisChatRoom.findOne({name: room_name}, this);
+		},
+		function foundRoom (err, room) {
+			console.log(lp + 'foundRoom');
+			if (err) {
+				console.log (lp + 'Error finding model.');
+				console.log(err.stack);
+				return cb({status : 'error', message: 'DB_ERROR'});
+			}
+				
+			event = new ChatRoomEvent ({
+				room_name: room_name,
+				type: 'message',
+				username: username,
+				message: message
+			});
 		
-		event.save(function(err) {
+			event.save(this);
+		}, 
+		function savedRoom (err) {
+			console.log(lp + 'savedRoom');
 			if (err) {
 				console.log (lp + 'Error saving model.');
 				console.log(err.stack);
 				return cb({status : 'error', message: 'DB_ERROR'});
 			}
-
+			
 			return cb({status : 'success', event : event});
-		});
-	});
+		}
+	);
 }; 
 
 // Returns  to cb one of:

@@ -3,7 +3,6 @@ var express = require('express'),
 	lessMiddleware = require('less-middleware'),
 	flash = require('connect-flash'),
 	helpers = require('../helpers'),
-	Lobby = require('../Lobby'),
 	loginRoutes = require('../routes/login'),
 	chatRoutes = require('../routes/chat'),
 	gameRoutes = require('../routes/game'),
@@ -60,6 +59,7 @@ app.configure('production', function(){
 // Routes
 // Login
 app.get('/', app.settings.routeIndex);
+app.get('/logout', loginRoutes.doLogout)
 app.post('/login', loginRoutes.doLogin)
 
 // Lobby
@@ -89,8 +89,3 @@ helpers(app);
 // ---------
 // Database
 var db = mongoose.connect('mongodb://localhost/test');
-
-Lobby.init( {rebuild: true, rooms: [app.settings.defaultRoom]}, function (err) {
-	console.error ('A fatal error occurred whilst initializing the lobby.');
-	console.error(err.stack);
-});
