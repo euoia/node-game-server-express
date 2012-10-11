@@ -2,6 +2,10 @@
 	"name": "application-name",
 	"version": "0.0.1",
 	"private": true,
+	"devDependencies": {
+		"mocha": "~1.5.0",
+		"should": "~1.2.0"
+	},
 	"dependencies": {
 		"express": "2.5.0",
 		"jade": ">= 0.0.1",
@@ -13,9 +17,5 @@
 		"connect-redis": "~1.4.4",
 		"redis": "~0.8.1",
 		"hiredis": "~0.1.14",
-	},
-	"devDependencies": {
-		"mocha": "~1.5.0",
-		"should": "~1.2.0"
 	}
 }
