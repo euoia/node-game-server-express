@@ -7,12 +7,41 @@ var express = require('express'),
 	chatRoutes = require('../routes/chat'),
 	gameRoutes = require('../routes/game'),
 	RedisStore = require('connect-redis')(express),
-	domain = require('domain');
+	domain = require('domain'),
+	bunyan = require('bunyan');
 
 var app = module.exports = express.createServer();
 
 // Configuration
 app.configure(function(){
+	app.use(express.cookieParser());
+	app.use(express.session({
+		secret: "asdalskdjalsdj8u819238u",
+		store: new RedisStore
+	}));
+	
+	// -------
+	// Setup bunyan logging as middleware.
+	var logger = new bunyan({name: "monolith"});
+	var reqId = 1;
+	app.use (function (req, res, next) {
+		var logObj = {
+			'reqId': reqId,
+			'originalUrl': req.originalUrl
+		};
+		reqId += 1;
+		
+		if (req.session !== undefined) {
+			logObj.username = req.session.username;
+		}
+		
+		req.log = logger.child(logObj);
+		
+		//req.log.info('Incoming request', req);
+		req.log.info('Incoming request');
+		next();
+	});
+	
 	app.use(lessMiddleware({
 		src: __dirname + '/../public',
 		compress: true
@@ -27,11 +56,6 @@ app.configure(function(){
 	
 	app.register('.html', require('jade'));
 
-	app.use(express.cookieParser());
-	app.use(express.session({
-		secret: "asdalskdjalsdj8u819238u",
-		store: new RedisStore
-	}));
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
 	app.use(app.router);
@@ -54,6 +78,7 @@ app.configure(function(){
 		d.enter();
 		next();
 	});
+	
 
 	// -------
 	// First-party configuration.
