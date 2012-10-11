@@ -17,6 +17,6 @@
 		"connect-redis": "~1.4.4",
 		"redis": "~0.8.1",
 		"hiredis": "~0.1.14",
-		"bunyan": "~0.14.4",
+		"bunyan": "~0.14.4"
 	}
 }
