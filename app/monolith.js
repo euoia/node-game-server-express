@@ -6,7 +6,8 @@ var express = require('express'),
 	loginRoutes = require('../routes/login'),
 	chatRoutes = require('../routes/chat'),
 	gameRoutes = require('../routes/game'),
-	RedisStore = require('connect-redis')(express);
+	RedisStore = require('connect-redis')(express),
+	domain = require('domain');
 
 var app = module.exports = express.createServer();
 
@@ -35,6 +36,24 @@ app.configure(function(){
 	app.use(express.methodOverride());
 	app.use(app.router);
 	app.use(express.static(__dirname + '/../public'));
+
+	// -------
+	// Setup domains as middleware.
+	// From: https://speakerdeck.com/u/felixge/p/domains-in-node-08
+	app.use (function (req, res, next) {
+		var d = domain.create();
+
+		d.on('error', function (err) {
+			// Handle the error.
+			res.statusCode = 500;
+			res.end(err.message + '\n');
+
+			d.dispose();
+		});
+
+		d.enter();
+		next();
+	});
 
 	// -------
 	// First-party configuration.
