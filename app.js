@@ -1,5 +1,6 @@
 var monolith = require ('./app/monolith'),
-	Lobby = require('./Lobby');
+	Lobby = require('./Lobby'),
+	log = require('./Log');
 
 // ---------
 // Init
@@ -10,4 +11,4 @@ Lobby.init( {rebuild: true, rooms: [monolith.settings.defaultRoom]}, function (e
 });
 
 monolith.listen(3000);
-console.log("Express server listening on port %d in %s mode", monolith.address().port, monolith.settings.env);
+log.info ("Express server listening on port %d in %s mode", monolith.address().port, monolith.settings.env);

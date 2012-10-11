@@ -1,5 +1,6 @@
 var mongoose = require('mongoose'),
-	Step = require('step');
+	Step = require('step'),
+	log = require('../Log');
 
 var accountSchema = new mongoose.Schema({
 	username: {
@@ -22,7 +23,6 @@ var accountSchema = new mongoose.Schema({
 });
 
 accountSchema.statics.insertTestRecords = function () {
-	var lp = '<M:S> insertTestRecords';
     /* ---------------------------------------------*/
     /* Insert some starting data */
     /* ---------------------------------------------*/
@@ -34,7 +34,7 @@ accountSchema.statics.insertTestRecords = function () {
         email: 'james.pickard@gmail.com'
     }).save(function(err) {
         if (err) { throw err; }
-        console.log(lp + 'Saved account jpickard');
+        log.info('Saved account jpickard');
     });
 
     new this ({
@@ -43,7 +43,7 @@ accountSchema.statics.insertTestRecords = function () {
         email: 'jack.small@gmail.com'
     }).save(function(err) {
         if (err) { throw err; }
-        console.log(lp + 'Saved account jsmall');
+        log.info('Saved account jsmall');
     });
 	
     new this ({
@@ -52,10 +52,10 @@ accountSchema.statics.insertTestRecords = function () {
         email: 'guillaume.boucher@xxxxxx.com'
     }).save(function(err) {
         if (err) { throw err; }
-        console.log(lp + 'Saved account gboucher');
+        log.info('Saved account gboucher');
     });
 
-    console.log(lp + 'Finished initializing account');
+    log.info('Finished initializing account');
 };
 
 // Retrieve the user by username.
@@ -73,11 +73,12 @@ accountSchema.statics.getByUsername = function (username, cb) {
         },
         function findAccountDone(err, account) {
             if (err) {
+				log.error(err);
 				return cb(err);
 			}
 
             if (account === null) {
-				console.log ('No account with username ' + username);
+				log.info('No account with username ' + username);
 				cb(null, {
 					status : 'error',
 					message : 'Account not found.'

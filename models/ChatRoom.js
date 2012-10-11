@@ -1,7 +1,8 @@
 var mongoose = require('mongoose'),
 	Step = require('step'),
 	ChatRoomEvent = require('./ChatRoomEvent'),
-	ChatRoomUser = require('./ChatRoomUser');
+	ChatRoomUser = require('./ChatRoomUser'),
+	log = require('../Log');
 
 
 var chatRoomSchema = new mongoose.Schema ({
@@ -13,16 +14,14 @@ var chatRoomSchema = new mongoose.Schema ({
 
 // Get all the events from this room.
 chatRoomSchema.methods.getEvents = function(cb) {
-	var lp = '<M:M> ChatRoom::getEvents: ';
-	console.log(lp + 'Getting events for ' + this.name);
+	log.info('Getting events for ' + this.name);
 	return Chatroom.getEvents(this.name, cb);
 };
 
 
 // Send a message to this room.
 chatRoomSchema.methods.sendMessage = function(username, message, cb) {
-	var lp = '<M:M> ChatRoom::sendMessage: ';
-	console.log(lp + 'username=' + username + ' message=' + message);
+	log.info('sendMessage username=%s message=%s', username, message);
 	return this.model('ChatRoom').sendMessage(this.name, username, message, cb);
 };
 
@@ -34,14 +33,13 @@ chatRoomSchema.methods.sendMessage = function(username, message, cb) {
 //      * Something like this should work - how does one do this in mongoose?
 //        chatRoomSchema.ensureIndex({'events.username': 1}, {unique: true});
 chatRoomSchema.statics.getUsers = function(room_name, cb) {
-	var lp = '<M:S> ChatRoom::getUsers: ',
-		usernames = [];
+	var usernames = [];
 		
-	console.log(lp + 'Getting users for ' + room_name);
+	log.info('getUsers', {'room_name': room_name})
 
 	ChatRoomUser.find({room_name: room_name}, function (err, users) {
 		if (err) {
-			console.log(err.stack);
+			log.info(err.stack);
 			return cb({status : 'error', code : 'DB_ERROR'});
 		}
 		
@@ -54,8 +52,7 @@ chatRoomSchema.statics.getUsers = function(room_name, cb) {
 };
 
 chatRoomSchema.statics.getEvents = function(room_name, cb) {
-	var lp = '<M:S> ChatRoom::getEvents: '
-	console.log(lp + 'room_name=' + room_name);
+	log.info('getEvents', {'room_name': room_name});
 
 	return ChatRoomEvent.find(
 		{room_name: room_name},
@@ -65,21 +62,20 @@ chatRoomSchema.statics.getEvents = function(room_name, cb) {
 
 // User-oriented functions
 chatRoomSchema.statics.getUnreadEvents = function(room_name, username, cb) {
-	var lp = '<M:S> ChatRoom::getUnreadEvents: ',
-		thisChatRoomUser,
+	var thisChatRoomUser,
 		thisEvents;
 		
-	console.log(lp + 'room_name=' + room_name + ' username=' + username);
+	log.info('getUnreadEvents', {'room_name': room_name, 'username': username});
 
 	Step(
 		// Get the user's last received message in this chat room
 		function findChatRoomUser() {
-			console.log(lp + 'findChatRoomUser');
+			log.info('findChatRoomUser');
 			ChatRoomUser.findOne({room_name: room_name, username: username}, this);
 		},
 		function findRoomUserDone(err, chatRoomUser) {
 			if (err) {
-				console.log(err.stack);
+				log.info(err.stack);
 				return cb({status : 'error', code : 'DB_ERROR'});
 			}
 			
@@ -96,7 +92,7 @@ chatRoomSchema.statics.getUnreadEvents = function(room_name, username, cb) {
 		},
 		function findUnreadChatRoomEventsDone(err, events) {
 			if (err) {
-				console.log(err.stack);
+				log.info(err.stack);
 				return cb({status : 'error', code : 'DB_ERROR'});
 			}
 			
@@ -107,7 +103,7 @@ chatRoomSchema.statics.getUnreadEvents = function(room_name, username, cb) {
 		},
 		function saveRoomDone (err) {
 			if (err) {
-				console.log(err.stack);
+				log.info(err.stack);
 				return cb({status : 'error', code : 'DB_ERROR'});
 			}
 
@@ -118,15 +114,14 @@ chatRoomSchema.statics.getUnreadEvents = function(room_name, username, cb) {
 
 // Send a message to any room.
 chatRoomSchema.statics.sendMessage = function(room_name, username, message, cb) {
-	var lp = '<M:S> ChatRoom::sendMessage: ',
-		event,
+	var event,
 		thisChatRoom = this;
 		
-	console.log(lp + 'room_name=' + room_name + ' username=' + username + ' message=' + message);
+	log.info('sendMessage room_name=%s username=%s message=%s', room_name, username, message);
 
 	Step(
 		function findChatRoomUser() {
-			console.log(lp + 'findChatRoomUser');
+			log.info('findChatRoomUser');
 			
 			// Allow messages from admin to any room without being in user list.
 			// TODO : Put this in config.
@@ -137,24 +132,24 @@ chatRoomSchema.statics.sendMessage = function(room_name, username, message, cb) 
 			}
 		},
 		function findRoomUserDone(err, chatRoomUser) {
-			console.log(lp + 'foundRoomUser');
+			log.info('foundRoomUser');
 			if (err) {
-				console.log(err.stack);
+				log.info(err.stack);
 				return cb({status : 'error', code : 'DB_ERROR'});
 			}
 			
 			if (chatRoomUser === null) {
-				console.log('User not in room');
+				log.info('User not in room');
 				return cb({status : 'error', code : 'USER_NOT_IN_ROOM'});
 			}
 			
 			thisChatRoom.findOne({name: room_name}, this);
 		},
 		function foundRoom (err, room) {
-			console.log(lp + 'foundRoom');
+			log.info('foundRoom');
 			if (err) {
-				console.log (lp + 'Error finding model.');
-				console.log(err.stack);
+				log.error('Error finding model.');
+				log.error(err.stack);
 				return cb({status : 'error', message: 'DB_ERROR'});
 			}
 				
@@ -168,10 +163,10 @@ chatRoomSchema.statics.sendMessage = function(room_name, username, message, cb) 
 			event.save(this);
 		}, 
 		function savedRoom (err) {
-			console.log(lp + 'savedRoom');
+			log.info('savedRoom');
 			if (err) {
-				console.log (lp + 'Error saving model.');
-				console.log(err.stack);
+				log.error('Error saving model.');
+				log.error(err.stack);
 				return cb({status : 'error', message: 'DB_ERROR'});
 			}
 			
@@ -189,9 +184,8 @@ chatRoomSchema.statics.sendMessage = function(room_name, username, message, cb) 
 //   ALREADY_PRESENT
 //   DB_ERROR
 chatRoomSchema.statics.join = function(room_name, username, cb) {
-	var lp = '<M:S> ChatRoom::join: ',
-		thisChatRoom = this;
-	console.log(lp + username + ' joining ' + room_name);
+	var thisChatRoom = this;
+	log.info(username + ' joining ' + room_name);
 
 	Step (
 		function findChatRoom() {
@@ -199,7 +193,7 @@ chatRoomSchema.statics.join = function(room_name, username, cb) {
 		},
 		function foundChatRoom(err, room) {
 			if (err) {
-				console.log(err.stack);
+				log.info(err.stack);
 				return cb({status : 'error', code : 'DB_ERROR'});
 			}
 				
@@ -207,13 +201,13 @@ chatRoomSchema.statics.join = function(room_name, username, cb) {
 		},
 		function foundChatRoomUser(err, chatRoomUser) {
 			if (err) {
-				console.log(err.stack);
+				log.info(err.stack);
 				return cb({status : 'error', code : 'DB_ERROR'});
 			};
 
 			if (chatRoomUser !== null) {
 				// Update chatRoomUser
-				console.log(lp + 'User ' + username + ' was already in chat room \'' + room_name + '\'!');
+				log.info('User ' + username + ' was already in chat room \'' + room_name + '\'!');
 				return cb({code: 'ALREADY_PRESENT'});
 			}
 
@@ -225,7 +219,7 @@ chatRoomSchema.statics.join = function(room_name, username, cb) {
 		},
 		function chatRoomJoinEventSaved (err) {
 			if (err) {
-				console.log(err.stack);
+				log.info(err.stack);
 				return cb({status : 'error', code : 'DB_ERROR'});
 			};
 			
@@ -238,7 +232,7 @@ chatRoomSchema.statics.join = function(room_name, username, cb) {
 		},
 		function chatRoomUserSaved (err) {
 			if (err) {
-				console.log(err.stack);
+				log.info(err.stack);
 				return cb({status : 'error', code : 'DB_ERROR'});
 			};
 			

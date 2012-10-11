@@ -12,8 +12,7 @@ var config = null,
 exports.playGame = function (req, res) {
 	var lp; // Log prefix.
 	
-	lp = '[' + req.param.username + '] game:playGame:';
-	winston.info (lp, 'called.');
+	req.log.info('playGame');
 	
 	Step (
 		function login() {
@@ -32,11 +31,9 @@ exports.playGame = function (req, res) {
 };
 
 exports.init = function (req, res) {
-	var lp, // Log prefix.
-		sessionError;
+	var sessionError;
 		
-	lp = '[' + req.session.username + '] game:init:';
-	winston.info (lp, 'called.');
+	req.log.info('init');
 	
 	sessionError = this.checkSessionError(req); 
 	if (sessionError) {
@@ -49,11 +46,9 @@ exports.init = function (req, res) {
 };
 
 exports.getConfig = function (req, res) {
-	var lp, // Log prefix.
-		sessionError;
+	var sessionError;
 		
-	lp = '[' + req.session.username + '] game:getConfig:';
-	winston.info (lp, 'called.');
+	req.log.info('getConfig');
 	
 	sessionError = this.checkSessionError(req); 
 	if (sessionError) {
@@ -69,22 +64,20 @@ exports.getConfig = function (req, res) {
 
 // Attempt to start a game. Will wait until a second player joins.
 exports.start = function (req, res) {
-	var lp, // log prefix.
-		sessionError,
+	var sessionError,
 		playerNum; // Number of joining player.
 		
-	lp = '[' + req.session.username + '] game:start:';
-	winston.info (lp, 'called.');
+	req.log.info('Start');
 	
 	sessionError = this.checkSessionError(req); 
 	if (sessionError) {
-		winston.info (lp, 'session error.');
+		req.log.info('Session error');
 		return res.json (sessionError);
 	}
 	
 	if (gameServer === null) {
 		// This is the first player (they must wait).
-		winston.info (lp, 'Joined as first player.');
+		req.log.info('Joined as first player.');
 		
 		playerNum = 1;
 		
@@ -104,7 +97,7 @@ exports.start = function (req, res) {
 	}
 	
 	// This is the second player (they can join).
-	winston.info (lp, 'Joined as second player.');
+	req.log.info('Joined as second player.');
 	
 	playerNum = 2;
 	
@@ -134,22 +127,20 @@ exports.start = function (req, res) {
 };
 
 exports.doPlacements = function (req, res) {
-	var lp, // Log prefix.
-		sessionError;
+	var sessionError;
 		
-	lp = '[' + req.session.username + '] game: doPlacements:';
-	winston.info (lp, 'called.');
+	req.log.info('doPlacements');
 	
 	sessionError = this.checkSessionError(req); 
 	if (sessionError) {
 		return res.json (sessionError);
 	}
 	
-	winston.log ('info', lp, {placements: req.param('placements')});
+	req.log.info('info', {placements: req.param('placements')});
 	
 	if (gameServer.waitingToPlace === null) {
 		// This is the first player.
-		winston.info (lp, 'First player placing.');
+		req.log.info('First player placing');
 		
 		gameServer.waitingToPlace = {
 			player: gameServer.getPlayer(req.session.username),
@@ -164,7 +155,7 @@ exports.doPlacements = function (req, res) {
 	}
 
 	// This is the second player, we can return results.
-	winston.info (lp, 'Second player placing.');
+	req.log.info('Second player placing.');
 	
 	gameServer.placements[req.session.username] = req.param('placements');
 
@@ -183,22 +174,20 @@ exports.doPlacements = function (req, res) {
 };
 
 exports.doOrders = function (req, res) {
-	var lp, // Log prefix.
-		sessionError;
+	var sessionError;
 		
-	lp = '[' + req.session.username + '] game: doOrders:';
-	winston.info (lp, 'called.');
+	req.log.info('doOrders');
 	
 	sessionError = this.checkSessionError(req); 
 	if (sessionError) {
 		return res.json (sessionError);
 	}
 	
-	winston.log ('info', lp, {orders: req.param('orders')});
+	req.log.info('info', {orders: req.param('orders')});
 	
 	if (gameServer.waitingToPlace === null) {
 		// This is the first player.
-		winston.info (lp, 'First player sending orders.');
+		req.log.info('First player sending orders.');
 		
 		gameServer.waitingToPlace = {
 			player: gameServer.getPlayer(req.session.username),
@@ -213,7 +202,7 @@ exports.doOrders = function (req, res) {
 	}
 
 	// This is the second player, we can return results.
-	winston.info (lp, 'Second player sending orders.');
+	req.log.info('Second player sending orders.');
 	
 	gameServer.orders[req.session.username] = req.param('orders');
 

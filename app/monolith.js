@@ -8,12 +8,35 @@ var express = require('express'),
 	gameRoutes = require('../routes/game'),
 	RedisStore = require('connect-redis')(express),
 	domain = require('domain'),
-	bunyan = require('bunyan');
+	log = require('../Log'),
+	fs = require('fs');
 
 var app = module.exports = express.createServer();
 
 // Configuration
 app.configure(function(){
+	// -------
+	// Setup domains as middleware.
+	// From: https://speakerdeck.com/u/felixge/p/domains-in-node-08
+	app.use (function (req, res, next) {
+		var d = domain.create();
+
+		d.on('error', function (err) {
+			// Handle the error.
+			// TODO: Don't show the stack in production.
+			res.statusCode = 500;
+			res.end(err.stack + '\n');
+			
+			// TODO: Make this configurable
+			fs.writeFileSync('log/lasterror.txt', err.stack);
+
+			d.dispose();
+		});
+
+		d.enter();
+		next();
+	});
+
 	app.use(express.cookieParser());
 	app.use(express.session({
 		secret: "asdalskdjalsdj8u819238u",
@@ -22,7 +45,6 @@ app.configure(function(){
 	
 	// -------
 	// Setup bunyan logging as middleware.
-	var logger = new bunyan({name: "monolith"});
 	var reqId = 1;
 	app.use (function (req, res, next) {
 		var logObj = {
@@ -35,7 +57,7 @@ app.configure(function(){
 			logObj.username = req.session.username;
 		}
 		
-		req.log = logger.child(logObj);
+		req.log = log.child(logObj);
 		
 		//req.log.info('Incoming request', req);
 		req.log.info('Incoming request');
@@ -60,25 +82,6 @@ app.configure(function(){
 	app.use(express.methodOverride());
 	app.use(app.router);
 	app.use(express.static(__dirname + '/../public'));
-
-	// -------
-	// Setup domains as middleware.
-	// From: https://speakerdeck.com/u/felixge/p/domains-in-node-08
-	app.use (function (req, res, next) {
-		var d = domain.create();
-
-		d.on('error', function (err) {
-			// Handle the error.
-			res.statusCode = 500;
-			res.end(err.message + '\n');
-
-			d.dispose();
-		});
-
-		d.enter();
-		next();
-	});
-	
 
 	// -------
 	// First-party configuration.

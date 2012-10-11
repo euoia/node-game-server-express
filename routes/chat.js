@@ -8,8 +8,7 @@ var waiting = []; // Client connections waiting. Array of objects containing use
 
 // This is an AJAX request that is expecting a JSON response.
 exports.send = function (req, res) {
-	var lp = '[' + req.session.username + '] chat::send: ',
-		sessionError;
+	var sessionError;
 		
 	sessionError = Session.check(req); 
 	if (sessionError) {
@@ -30,18 +29,18 @@ exports.send = function (req, res) {
 			console.dir(r);
 			
 			// Send the response to the requestor.
-			console.log(lp + 'Sent a message: ' + r.event.message);
+			req.log.info('Sent a message: ' + r.event.message);
 
 			res.send({
 				status: 1
 			}, 200);
 			
 			/* Any clients that are waiting on the long poll should get a message. */
-			console.log(lp + 'There are ' + waiting.length + ' clients waiting.');
+			req.log.info('There are ' + waiting.length + ' clients waiting.');
 			
 			while (waiting.length > 0) {
 				waiting_user = waiting.pop();
-				console.log (lp + 'Processing waiting user: ' + waiting_user.username);
+				req.log.info('Processing waiting user: ' + waiting_user.username);
 				
 				ChatRoom.getUnreadEvents(waiting_user.room_name, waiting_user.username, waiting_user.callback);
 			}
@@ -58,23 +57,22 @@ exports.getUnreadEvents = function (req, res) {
 
 	step (
 		function getUnreadEvents() {
-			console.log(lp + 'Getting unread events');
+			req.log.info('Getting unread events');
 			ChatRoom.getUnreadEvents(req.body.room_name, req.session.username, this);
 		},
 		function getUnreadEventsDone(r) {
-			console.log(lp + 'ChatRoom.getUnreadEvents returned: ');
-			console.dir(r);
+			req.log.info('ChatRoom.getUnreadEvents returned: ', r);
 			
 			if (r.status === 'error') {
 				return this ({status: 'error', message: 'Error getting unread events'});
 			}
 
 			if (r.events.length !== 0) {
-				console.log (lp + 'Sending ' + r.events.length + ' unread events.');
+				req.log.info('Sending ' + r.events.length + ' unread events.');
 				this({status: 'success', events: r.events});
 			}
 			
-			console.log (lp + 'No unread events - pushing this connection onto the waiting queue.');
+			req.log.info('No unread events - pushing this connection onto the waiting queue.');
 			waiting.push({
 				'username' : req.session.username,
 				'room_name' : req.body.room_name,
@@ -82,8 +80,7 @@ exports.getUnreadEvents = function (req, res) {
 			});
 		},
 		function sendResponse(r) {
-			console.log (lp + 'Sending response to client:')
-			console.log(r);
+			req.log.info('Sending response to client:', r)
 			
 			if (r.status === 'error') {
 				return res.send({
@@ -103,7 +100,6 @@ exports.getUnreadEvents = function (req, res) {
 
 // Client uses long polling to wait for new events
 exports.pollEvents = function (req, res) {
-	var lp = '[' + req.session.username + '] chat::pollEvents: ';
-	console.log('Polling...');
+	req.log.info('Polling...');
 };
 

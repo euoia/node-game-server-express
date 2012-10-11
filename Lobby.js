@@ -4,7 +4,8 @@ var mongoose = require('mongoose'),
 	ChatRoom = require('./models/ChatRoom'),
 	ChatRoomEvent = require('./models/ChatRoomEvent'),
 	ChatRoomUser = require('./models/ChatRoomUser'),
-	Step = require('step');
+	Step = require('step'),
+	log = require('./Log');
 
 
 /* A lobby is responsible for multiple chat rooms. */
@@ -16,8 +17,7 @@ this.rooms = {};
 exports.init = function (settings, cb) {
 	var thisLobby = this,
 		room, // Temp room object.
-		roomIdx, // room iterator.
-		lp = 'Lobby::init: ';
+		roomIdx; // room iterator.
 	
 	if (settings.rebuild === true) {
 		ChatRoom.collection.drop();
@@ -40,8 +40,7 @@ exports.init = function (settings, cb) {
 			},
 			function roomSaved(err) {
 				if (err) {
-					console.error(lp + 'Error saving room.');
-					console.error(err.stack);
+					log.error('Error saving room.', err);
 					return cb (err);
 				}
 				
@@ -52,13 +51,13 @@ exports.init = function (settings, cb) {
 					return cb (r);
 				}
 				
-				console.log (lp + 'Initialized lobby room ' + room.name);
+				log.info ('Initialized lobby room ' + room.name);
 				thisLobby.rooms[room.name] = room;
 			}
 		);
 	}
 
-	console.log(lp + 'Finished initializing lobby');
+	log.info('Finished initializing lobby');
 };
 
 exports.join = function (room_name, username, cb) {
@@ -88,9 +87,7 @@ exports.join = function (room_name, username, cb) {
 				return cb(r);
 			};
 			
-			console.log('users:');
-			console.log(r.users);
-			
+			log.info('users:', r.users);
 			return cb({status: 'success', users: r.users});
 		}
 	);

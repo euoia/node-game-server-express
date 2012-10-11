@@ -11,10 +11,9 @@ exports.index = function(req, res){
 };
 
 exports.goLogin = function(req, res){
-	var lp = '[' + req.session.username + '] login::goLogin: ',
-		sessionError;
+	var sessionError;
 		
-	console.log(lp + 'Rendering login form.');
+	req.log.info('Rendering login form');
 	
 	sessionError = Session.check(req); 
 	if (sessionError === null) {
@@ -30,8 +29,7 @@ exports.goLogin = function(req, res){
 
 // Log the user in.
 exports.doLogin = function(req, res) {
-	var lp = '[' + req.session.username + '] login::doLogin: ';
-	console.log (lp + 'Attempting to login.');
+	req.log.info('Attempting to login.');
 	
 	Step (
 		function getAccount() {
@@ -48,7 +46,7 @@ exports.doLogin = function(req, res) {
 				return res.redirect(req.app.settings.failedLoginRedirect);
 			}
 			
-			console.log (lp + 'Login successful with ' + req.param('username'));
+			req.log.info('Login successful with ' + req.param('username'));
 			req.session.username = req.param('username');
 			req.session.logged_in = true;
 			return res.redirect(req.app.settings.successfulLoginRedirect);
@@ -58,7 +56,6 @@ exports.doLogin = function(req, res) {
 
 // Log the user out.
 exports.doLogout = function(req, res) {
-	var lp = '[' + req.session.username + '] login::doLogout: ';
 	req.session.destroy();
 	return res.redirect('/');
 };
@@ -66,15 +63,13 @@ exports.doLogout = function(req, res) {
 // TODO, check session using an array of routes.
 exports.goLobby = function(req, res) {
 	var users,
-	    lp, // Log prefix.
 		sessionError;
 		
-	lp = '[' + req.session.username + '] login::goLobby: ';
-	console.log (lp + 'Joining lobby.');
+	req.log.info('Joining lobby.');
 	
 	sessionError = Session.check(req); 
 	if (sessionError) {
-		console.log(lp + 'Session error');
+		req.log.info('Session error');
 		req.flash(sessionError.status, sessionError.message);
 		return res.redirect(req.app.settings.failedLoginRedirect);
 	}
@@ -82,7 +77,7 @@ exports.goLobby = function(req, res) {
 	Step (
 		function joinRoom() {
 			// Player should have a session now.
-			console.log(lp + 'Joining room ' + req.app.settings.defaultRoom);
+			req.log.info('Joining room ' + req.app.settings.defaultRoom);
 			Lobby.join(req.app.settings.defaultRoom, req.session.username, this);
 		},
 		function joinRoomDone(r) {
@@ -93,7 +88,7 @@ exports.goLobby = function(req, res) {
 			}
 
 			if (r.code == 'ALREADY_PRESENT') {
-				console.log (lp + 'User was already in the room.');
+				req.log.info('User was already in the room.');
 			}
 			
 			users = r.users;
@@ -104,8 +99,7 @@ exports.goLobby = function(req, res) {
 				throw (err);
 			}
 			
-			console.log(lp + 'rendering chat with users');
-			console.log(users);
+			req.log.info('Rendering chat with users', users);
 				
 			return res.render('chat', {
 				// Account
@@ -121,4 +115,3 @@ exports.goLobby = function(req, res) {
 		}
 	);
 };
-
